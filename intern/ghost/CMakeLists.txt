@@ -112,7 +112,7 @@ if(WITH_INPUT_NDOF)
 	)
 endif()
 
-if(WITH_HEADLESS OR WITH_GHOST_SDL)
+if(WITH_HEADLESS OR WITH_GHOST_SDL OR WITH_WAYLAND)
 	if(WITH_HEADLESS)
 		list(APPEND SRC
 			intern/GHOST_DisplayManagerNULL.h
@@ -120,7 +120,7 @@ if(WITH_HEADLESS OR WITH_GHOST_SDL)
 			intern/GHOST_WindowNULL.h
 		)
 		add_definitions(-DWITH_HEADLESS)
-	else()
+	elseif(WITH_GHOST_SDL)
 		list(APPEND SRC
 			intern/GHOST_DisplayManagerSDL.cpp
 			intern/GHOST_SystemSDL.cpp
@@ -133,9 +133,24 @@ if(WITH_HEADLESS OR WITH_GHOST_SDL)
 			intern/GHOST_ContextSDL.h
 		)
 		add_definitions(-DWITH_GHOST_SDL)
+	elseif(WITH_WAYLAND)
+		if(OPENGL_EGL_FOUND)
+			add_definitions(-DWL_EGL_PLATFORM)
+		endif()
+
+		list(APPEND SRC
+			intern/GHOST_DisplayManagerWayland.cpp
+			intern/GHOST_SystemWayland.cpp
+			intern/GHOST_WindowWayland.cpp
+			intern/wayland_error.cpp
+
+			intern/GHOST_DisplayManagerWayland.h
+			intern/GHOST_SystemWayland.h
+			intern/GHOST_WindowWayland.h
+		)
 	endif()
 
-	if(NOT WITH_HEADLESS)
+	if(NOT WITH_HEADLESS AND NOT WITH_WAYLAND)
 		list(APPEND INC_SYS
 			${SDL_INCLUDE_DIR}
 		)
