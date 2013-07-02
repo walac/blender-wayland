@@ -378,7 +378,7 @@ function(setup_liblinks
 	if(WITH_SDL AND NOT WITH_SDL_DYNLOAD)
 		target_link_libraries(${target} ${SDL_LIBRARY})
 	endif()
-	if(WITH_WAYLAND)
+	if(WITH_GHOST_WAYLAND)
 		target_link_libraries(
 			${target}
 			${WAYLAND_CLIENT_LIBRARIES}

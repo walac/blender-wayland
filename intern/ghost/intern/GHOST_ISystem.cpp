@@ -47,7 +47,7 @@
 #    include "GHOST_SystemSDL.h"
 #  elif defined(WIN32)
 #    include "GHOST_SystemWin32.h"
-#  elif defined WITH_WAYLAND
+#  elif defined WITH_GHOST_WAYLAND
 #      include "GHOST_SystemWayland.h"
 #  else
 #    ifdef __APPLE__
@@ -72,7 +72,7 @@ GHOST_TSuccess GHOST_ISystem::createSystem()
 		m_system = new GHOST_SystemSDL();
 #  elif defined(WIN32)
 		m_system = new GHOST_SystemWin32();
-#  elif defined WITH_WAYLAND
+#  elif defined WITH_GHOST_WAYLAND
 		m_system = new GHOST_SystemWayland();
 #  else
 #    ifdef __APPLE__
