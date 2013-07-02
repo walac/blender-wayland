@@ -277,6 +277,9 @@ if(WITH_X11)
 	option(WITH_X11_XF86VMODE "Enable X11 video mode switching"                       ON)
 endif()
 
+option(WITH_EGL "Enable EGL windowing system" OFF)
+mark_as_advanced(WITH_EGL)
+
 if(UNIX AND NOT APPLE)
 	option(WITH_SYSTEM_GLEW "Use GLEW OpenGL wrapper library provided by the operating system" ON)
 	option(WITH_SYSTEM_GLES "Use OpenGL ES library provided by the operating system"           ON)
@@ -972,19 +975,18 @@ if(UNIX AND NOT APPLE)
 	endif()
 
 	if(WITH_GHOST_WAYLAND)
+		set(WITH_EGL ON)
+
 		find_package_wrapper(Wayland)
-		find_package_wrapper(OpenGLES)
 
 		mark_as_advanced(
 			WAYLAND_CLIENT_LIBRARIES
 			WAYLAND_CLIENT_INCLUDE_DIR
 			WAYLAND_EGL_INCLUDE_DIR
 			WAYLAND_EGL_LIBRARIES
-			OPENGLES_EGL_LIBRARY
-			OPENGLES_EGL_INCLUDE_DIR
 		)
 
-		if(NOT WAYLAND_CLIENT_FOUND OR NOT WAYLAND_EGL_FOUND OR NOT OPENGLES_EGL_FOUND)
+		if(NOT WAYLAND_CLIENT_FOUND OR NOT WAYLAND_EGL_FOUND)
 				if(NOT WAYLAND_CLIENT_FOUND)
 					message(FATAL_ERROR "Wayland client libraries not found.")
 				endif()
@@ -992,13 +994,24 @@ if(UNIX AND NOT APPLE)
 				if(NOT WAYLAND_EGL_FOUND)
 					message(FATAL_ERROR "Wayland EGL libraries not found.")
 				endif()
-
-				if(NOT OPENGL_EGL_FOUND)
-					message(FATAL_ERROR "EGL libraries not found.")
-				endif()
 		endif()
 
 		add_definitions("-DWITH_GHOST_WAYLAND")
+	endif()
+
+	if(WITH_EGL)
+		find_package_wrapper(OpenGLES)
+
+		mark_as_advanced(
+			OPENGLES_EGL_LIBRARY
+			OPENGLES_EGL_INCLUDE_DIR
+		)
+
+		if(NOT OPENGLES_EGL_FOUND)
+			if(NOT OPENGL_EGL_FOUND)
+				message(FATAL_ERROR "EGL libraries not found.")
+			endif()
+		endif()
 	endif()
 
 	if(WITH_JACK)
@@ -2977,6 +2990,7 @@ if(FIRST_RUN)
 	info_cfg_option(WITH_MEM_VALGRIND)
 	info_cfg_option(WITH_SYSTEM_GLEW)
 	info_cfg_option(WITH_SYSTEM_OPENJPEG)
+	info_cfg_option(WITH_EGL)
 	info_cfg_option(WITH_GHOST_WAYLAND)
 
 	info_cfg_text("Image Formats:")

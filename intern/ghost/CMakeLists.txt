@@ -135,8 +135,16 @@ if(WITH_HEADLESS OR WITH_GHOST_SDL OR WITH_GHOST_WAYLAND)
 		add_definitions(-DWITH_GHOST_SDL)
 	elseif(WITH_GHOST_WAYLAND)
 		if(OPENGL_EGL_FOUND)
+			list(APPEND INC_SYS
+				${OPENGLES_EGL_INCLUDE_DIR}
+			)
+
 			add_definitions(-DWL_EGL_PLATFORM)
 		endif()
+
+		list(APPEND INC_SYS
+			${WAYLAND_CLIENT_INCLUDE_DIR}
+		)
 
 		list(APPEND SRC
 			intern/GHOST_DisplayManagerWayland.cpp

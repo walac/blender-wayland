@@ -386,6 +386,9 @@ function(setup_liblinks
 			${OPENGLES_EGL_LIBRARY}
 		)
 	endif()
+	if(WITH_EGL)
+		target_link_libraries(${target} ${OPENGLES_EGL_LIBRARY})
+	endif()
 	if(WITH_CODEC_QUICKTIME)
 		target_link_libraries(${target} ${QUICKTIME_LIBRARIES})
 	endif()
