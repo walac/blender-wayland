@@ -125,7 +125,7 @@ private:
 		typedef boost::interprocess::unique_ptr<T, void(*)(T*)> type;
 	};
 
-	wayland_ptr<wl_display>::type m_wl_display;
+	wayland_ptr<wl_display>::type m_display;
 	scoped_resource<EGLDisplay> m_egl_display;
 	scoped_resource<EGLContext> m_egl_context;
 	EGLConfig m_conf;

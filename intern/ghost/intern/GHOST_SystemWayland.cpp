@@ -41,7 +41,7 @@
 
 GHOST_SystemWayland::GHOST_SystemWayland()
 	: GHOST_System()
-	, m_wl_display(wl_display_connect(NULL), wl_display_disconnect)
+	, m_display(wl_display_connect(NULL), wl_display_disconnect)
 	, m_egl_display(eglTerminate)
 {
 	static const EGLint config_attribs[] = {
@@ -58,7 +58,7 @@ GHOST_SystemWayland::GHOST_SystemWayland()
 	EGLint major, minor;
 	EGLint n;
 
-	m_egl_display.reset(EGL_CHK(eglGetDisplay(m_wl_display.get())));
+	m_egl_display.reset(EGL_CHK(eglGetDisplay(m_display.get())));
 
 	EGL_CHK(eglInitialize(m_egl_display.get(), &major, &minor));
 
