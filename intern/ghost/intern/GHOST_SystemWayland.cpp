@@ -37,11 +37,12 @@
 #include "GHOST_EventButton.h"
 #include "GHOST_EventWheel.h"
 
-#include "wayland_error.h"
-
 GHOST_SystemWayland::GHOST_SystemWayland()
 	: GHOST_System()
 	, m_display(wl_display_connect(NULL), wl_display_disconnect)
+	, m_registry(NULL, wl_registry_destroy)
+	, m_compositor(NULL, wl_compositor_destroy)
+	, m_shell(NULL, wl_shell_destroy)
 	, m_egl_display(eglTerminate)
 {
 	static const EGLint config_attribs[] = {
@@ -57,6 +58,8 @@ GHOST_SystemWayland::GHOST_SystemWayland()
 
 	EGLint major, minor;
 	EGLint n;
+
+	m_registry.reset(WL_CHK(wl_display_get_registry(m_display.get())));
 
 	m_egl_display.reset(EGL_CHK(eglGetDisplay(m_display.get())));
 
@@ -226,3 +229,41 @@ GHOST_SystemWayland::putClipboard(GHOST_TInt8 *buffer, bool selection) const
 	(void) selection;
 }
 
+void
+GHOST_SystemWayland::display_handle_global(
+	void *data,
+	struct wl_registry *registry,
+	uint32_t id,
+	const char *interface,
+	uint32_t version)
+{
+	GHOST_SystemWayland *this_ = static_cast<GHOST_SystemWayland *> (data);
+	this_->display_handle(registry, id, interface, version);
+}
+
+void
+GHOST_SystemWayland::display_handle(
+	struct wl_registry *registry,
+	uint32_t id,
+	const char *interface,
+	uint32_t version)
+{
+	using std::strcmp;
+
+	(void) version;
+
+#define REGISTRY_BIND(object) \
+	do { \
+		registry_bind( \
+			m_##object, \
+			interface, \
+			"wl_" #object, \
+			id, \
+			&wl_##object##_interface); \
+	} while (0)
+
+	REGISTRY_BIND(compositor);
+	REGISTRY_BIND(shell);
+
+#undef REGISTRY_BIND
+}

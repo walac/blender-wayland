@@ -35,6 +35,7 @@
 #include "GHOST_WindowWayland.h"
 #include "GHOST_Event.h"
 #include "scoped_resource.h"
+#include "wayland_error.h"
 
 extern "C" {
 #include "wayland-client.h"
@@ -43,6 +44,7 @@ extern "C" {
 
 #include <boost/interprocess/smart_ptr/unique_ptr.hpp>
 #include <functional>
+#include <cstring>
 
 class GHOST_WindowWayland;
 
@@ -108,6 +110,19 @@ private:
 	             const GHOST_TEmbedderWindowID parentWindow = 0
 	             );
 
+	static void display_handle_global(
+			void *data,
+			struct wl_registry *registry,
+			uint32_t id,
+			const char *interface,
+			uint32_t version);
+
+	void display_handle(
+			struct wl_registry *registry,
+			uint32_t id,
+			const char *interface,
+			uint32_t version);
+
 	// sad we can't use C++11 yet
 	struct egl_context_deleter
 		: public std::unary_function<void, EGLContext>
@@ -115,7 +130,7 @@ private:
 		egl_context_deleter(EGLDisplay d) : d(d) {}
 
 		void operator()(EGLContext c)
-		{ eglDestroyContext(d, c); }
+		{ EGL_CHK(eglDestroyContext(d, c)); }
 
 		EGLDisplay d;
 	};
@@ -125,10 +140,41 @@ private:
 		typedef boost::interprocess::unique_ptr<T, void(*)(T*)> type;
 	};
 
+	template<typename T>
+	void registry_bind(
+		T &object,
+		const char *name,
+		const char *myname,
+		uint32_t id,
+		const wl_interface *interface);
+
 	wayland_ptr<wl_display>::type m_display;
+	wayland_ptr<wl_registry>::type m_registry;
+	wayland_ptr<wl_compositor>::type m_compositor;
+	wayland_ptr<wl_shell>::type m_shell;
 	scoped_resource<EGLDisplay> m_egl_display;
 	scoped_resource<EGLContext> m_egl_context;
 	EGLConfig m_conf;
 };
+
+template<typename T> void
+GHOST_SystemWayland::registry_bind(
+	T &object,
+	const char *name,
+	const char *myname,
+	uint32_t id,
+	const wl_interface *interface)
+{
+	typedef typename T::pointer pointer;
+
+	if (!std::strcmp(name, myname))
+		object.reset(
+			static_cast<pointer> (WL_CHK(wl_registry_bind(
+				m_registry.get(),
+				id,
+				interface,
+				1))));
+}
+
 
 #endif
