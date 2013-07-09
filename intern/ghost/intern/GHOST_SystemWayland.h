@@ -89,6 +89,24 @@ public:
 	getMainDisplayDimensions(GHOST_TUns32& width,
 	                         GHOST_TUns32& height) const;
 
+	wl_display *getDisplay()
+	{ return m_display.get(); }
+
+	wl_compositor *getCompositor()
+	{ return m_compositor.get(); }
+
+	wl_shell *getShell()
+	{ return m_shell.get(); }
+
+	EGLDisplay getEglDisplay()
+	{ return m_egl_display.get(); }
+
+	EGLContext getEglContext()
+	{ return m_egl_context.get(); }
+
+	EGLConfig getEglConfig()
+	{ return m_conf; }
+
 private:
 
 	GHOST_TSuccess
