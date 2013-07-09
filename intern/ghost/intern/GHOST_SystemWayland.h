@@ -35,14 +35,13 @@
 #include "GHOST_WindowWayland.h"
 #include "GHOST_Event.h"
 #include "scoped_resource.h"
-#include "wayland_error.h"
+#include "wayland_util.h"
 
 extern "C" {
 #include "wayland-client.h"
 #include "EGL/egl.h"
 }
 
-#include <boost/interprocess/smart_ptr/unique_ptr.hpp>
 #include <functional>
 #include <cstring>
 
@@ -133,11 +132,6 @@ private:
 		{ EGL_CHK(eglDestroyContext(d, c)); }
 
 		EGLDisplay d;
-	};
-
-	template<typename T>
-	struct wayland_ptr {
-		typedef boost::interprocess::unique_ptr<T, void(*)(T*)> type;
 	};
 
 	template<typename T>

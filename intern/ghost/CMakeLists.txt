@@ -150,7 +150,7 @@ if(WITH_HEADLESS OR WITH_GHOST_SDL OR WITH_GHOST_WAYLAND)
 			intern/GHOST_DisplayManagerWayland.cpp
 			intern/GHOST_SystemWayland.cpp
 			intern/GHOST_WindowWayland.cpp
-			intern/wayland_error.cpp
+			intern/wayland_util.cpp
 
 			intern/GHOST_DisplayManagerWayland.h
 			intern/GHOST_SystemWayland.h
