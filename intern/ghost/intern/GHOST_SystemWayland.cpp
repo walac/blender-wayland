@@ -56,10 +56,17 @@ GHOST_SystemWayland::GHOST_SystemWayland()
 		EGL_NONE
 	};
 
+	static const struct wl_registry_listener registry_listener = {
+		display_handle_global
+	};
+
 	EGLint major, minor;
 	EGLint n;
 
 	m_registry.reset(WL_CHK(wl_display_get_registry(m_display.get())));
+	WL_CHK(wl_registry_add_listener(m_registry.get(), &registry_listener, this));
+
+	WL_CHK(wl_display_dispatch(m_display.get()));
 
 	m_egl_display.reset(EGL_CHK(eglGetDisplay(m_display.get())));
 
