@@ -71,7 +71,7 @@ GHOST_SystemWayland::GHOST_SystemWayland()
 
 	m_egl_context.reset(
 		EGL_CHK(eglCreateContext(m_egl_display.get(), m_conf, EGL_NO_CONTEXT, NULL)),
-		egl_context_deleter(m_egl_display.get()));
+		egl_object_deleter<EGLContext>(m_egl_display.get(), eglDestroyContext));
 
 	EGL_CHK(eglMakeCurrent(m_egl_display.get(), NULL, NULL, m_egl_context.get()));
 }

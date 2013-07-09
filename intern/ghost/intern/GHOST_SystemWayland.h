@@ -42,7 +42,6 @@ extern "C" {
 #include "EGL/egl.h"
 }
 
-#include <functional>
 #include <cstring>
 
 class GHOST_WindowWayland;
@@ -121,18 +120,6 @@ private:
 			uint32_t id,
 			const char *interface,
 			uint32_t version);
-
-	// sad we can't use C++11 yet
-	struct egl_context_deleter
-		: public std::unary_function<void, EGLContext>
-	{
-		egl_context_deleter(EGLDisplay d) : d(d) {}
-
-		void operator()(EGLContext c)
-		{ EGL_CHK(eglDestroyContext(d, c)); }
-
-		EGLDisplay d;
-	};
 
 	template<typename T>
 	void registry_bind(
