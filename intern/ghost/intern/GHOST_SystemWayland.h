@@ -34,6 +34,7 @@
 #include "GHOST_TimerManager.h"
 #include "GHOST_WindowWayland.h"
 #include "GHOST_Event.h"
+#include "scoped_resource.h"
 
 extern "C" {
 #include "wayland-client.h"
@@ -41,7 +42,7 @@ extern "C" {
 }
 
 #include <boost/interprocess/smart_ptr/unique_ptr.hpp>
-#include <boost/type_traits.hpp>
+#include <functional>
 
 class GHOST_WindowWayland;
 
@@ -107,9 +108,21 @@ private:
 	             const GHOST_TEmbedderWindowID parentWindow = 0
 	             );
 
+	// sad we can't use C++11 yet
+	struct egl_context_deleter
+		: public std::unary_function<void, EGLContext>
+	{
+		egl_context_deleter(EGLDisplay d) : d(d) {}
+
+		void operator()(EGLContext c)
+		{ eglDestroyContext(d, c); }
+
+		EGLDisplay d;
+	};
+
 	boost::interprocess::unique_ptr<wl_display, void(*)(wl_display*)> m_wl_display;
-	EGLDisplay m_egl_display;
-	EGLContext m_egl_context;
+	scoped_resource<EGLDisplay> m_egl_display;
+	scoped_resource<EGLContext> m_egl_context;
 	EGLConfig m_conf;
 };
 

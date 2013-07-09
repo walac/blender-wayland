@@ -40,14 +40,10 @@
 #include "wayland_error.h"
 
 GHOST_SystemWayland::GHOST_SystemWayland()
-    : GHOST_System()
-    , m_wl_display(wl_display_connect(NULL), wl_display_disconnect)
+	: GHOST_System()
+	, m_wl_display(wl_display_connect(NULL), wl_display_disconnect)
+	, m_egl_display(eglTerminate)
 {
-	EGLint major, minor;
-	EGLint n;
-
-	m_egl_display = EGL_CHK(eglGetDisplay(m_wl_display.get()));
-
 	static const EGLint config_attribs[] = {
 		EGL_SURFACE_TYPE, EGL_WINDOW_BIT,
 		EGL_RED_SIZE, 1,
@@ -59,32 +55,31 @@ GHOST_SystemWayland::GHOST_SystemWayland()
 		EGL_NONE
 	};
 
-	EGL_CHK(eglInitialize(m_egl_display, &major, &minor));
+	EGLint major, minor;
+	EGLint n;
+
+	m_egl_display.reset(EGL_CHK(eglGetDisplay(m_wl_display.get())));
+
+	EGL_CHK(eglInitialize(m_egl_display.get(), &major, &minor));
 
 	EGL_CHK(eglBindAPI(EGL_OPENGL_API));
 
-	EGL_CHK(eglChooseConfig(m_egl_display, config_attribs, &m_conf, 1, &n));
+	EGL_CHK(eglChooseConfig(m_egl_display.get(), config_attribs, &m_conf, 1, &n));
 
-	m_egl_context = EGL_CHK(eglCreateContext(
-						m_egl_display,
-                        m_conf,
-                        EGL_NO_CONTEXT,
-                        NULL));
+	m_egl_context.reset(
+		EGL_CHK(eglCreateContext(m_egl_display.get(), m_conf, EGL_NO_CONTEXT, NULL)),
+		egl_context_deleter(m_egl_display.get()));
 
-	EGL_CHK(eglMakeCurrent(m_egl_display, NULL, NULL, m_egl_context));
+	EGL_CHK(eglMakeCurrent(m_egl_display.get(), NULL, NULL, m_egl_context.get()));
 }
 
 GHOST_SystemWayland::~GHOST_SystemWayland()
 {
 	EGL_CHK(eglMakeCurrent(
-		m_egl_display,
+		m_egl_display.get(),
 		EGL_NO_SURFACE,
 		EGL_NO_SURFACE,
 		EGL_NO_CONTEXT));
-
-	EGL_CHK(eglDestroyContext(m_egl_display, m_egl_context));
-
-	EGL_CHK(eglTerminate(m_egl_display));
 }
 
 GHOST_IWindow *
