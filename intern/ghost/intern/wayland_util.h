@@ -25,12 +25,9 @@
 
 #include <boost/interprocess/smart_ptr/unique_ptr.hpp>
 #include <cstring>
+#include <functional>
+#include <boost/function.hpp>
 #include <EGL/egl.h>
-
-template<typename T>
-struct wayland_ptr {
-	typedef boost::interprocess::unique_ptr<T, void(*)(T*)> type;
-};
 
 // Wayland error treatment
 
@@ -73,5 +70,26 @@ egl_error_check(T *result, const char *expr, const char *srcfile, size_t linenum
 #define EGL_CHK(expr) expr
 #define WL_CHK(expr) expr
 #endif /* GHOST_DEBUG */
+
+template<typename T>
+struct wayland_ptr {
+	typedef boost::interprocess::unique_ptr<T, void(*)(T*)> type;
+};
+
+template<typename T>
+struct egl_object_deleter
+	: public std::unary_function<void, T>
+{
+	template<typename D>
+	egl_object_deleter(EGLDisplay disp, D d)
+		: disp(disp), deleter(d)
+	{ }
+
+	void operator()(T o)
+	{ EGL_CHK(deleter(disp, o)); }
+
+	EGLDisplay disp;
+	boost::function<EGLBoolean(EGLDisplay, T)> deleter;
+};
 
 #endif /* WAYLAND_UTIL_H_ */
