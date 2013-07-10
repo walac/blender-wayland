@@ -30,9 +30,12 @@
 
 #include "GHOST_Window.h"
 #include "GHOST_SystemWayland.h"
+#include "wayland_util.h"
+#include "scoped_resource.h"
 
 extern "C" {
 #include <wayland-client.h>
+#include <wayland-egl.h>
 #include <EGL/egl.h>
 }
 
@@ -41,10 +44,6 @@ class GHOST_SystemWayland;
 
 class GHOST_WindowWayland : public GHOST_Window
 {
-private:
-	GHOST_SystemWayland  *m_system;
-	bool m_invalid_window;
-
 public:
 
 	const GHOST_TabletData *GetTabletData() {
@@ -144,6 +143,20 @@ protected:
 	GHOST_TSuccess beginFullScreen() const { return GHOST_kFailure; }
 
 	GHOST_TSuccess endFullScreen() const { return GHOST_kFailure; }
+
+private:
+
+	void context_make_current(EGLSurface surf);
+
+	GHOST_SystemWayland  *m_system;
+	bool m_invalid_window;
+
+	wayland_ptr<wl_surface>::type m_surface;
+	wayland_ptr<wl_shell_surface>::type m_shell_surface;
+	wayland_ptr<wl_egl_window>::type m_window;
+	scoped_resource<EGLSurface> m_egl_surface;
+	scoped_resource<EGLContext> m_egl_context;
+	EGLConfig m_conf;
 };
 
 #endif // __GHOST_WINDOWWAYLAND_H__

@@ -26,7 +26,7 @@
 
 #include "GHOST_WindowWayland.h"
 #include <GL/glew.h>
-#include <assert.h>
+#include <cassert>
 
 GHOST_WindowWayland::GHOST_WindowWayland(GHOST_SystemWayland *system,
                                  const STR_String& title,
@@ -43,14 +43,44 @@ GHOST_WindowWayland::GHOST_WindowWayland(GHOST_SystemWayland *system,
                                  )
 	: GHOST_Window(width, height, state, type, stereoVisual, exclusive, numOfAASamples)
 	, m_system(system)
+	, m_surface(NULL, wl_surface_destroy)
+	, m_shell_surface(NULL, wl_shell_surface_destroy)
+	, m_window(NULL, wl_egl_window_destroy)
+	, m_egl_context(egl_object_deleter<EGLContext>(system->getEglDisplay(),
+			eglDestroyContext))
 {
+	wl_display *display = m_system->getDisplay();
+	wl_compositor *compositor = m_system->getCompositor();
+	wl_shell *shell = m_system->getShell();
+	EGLDisplay egl_display = m_system->getEglDisplay();
+
+	assert(display);
+	assert(compositor);
+	assert(shell);
+
+	m_surface.reset(WL_CHK(wl_compositor_create_surface(compositor)));
+	WL_CHK(wl_surface_set_user_data(m_surface.get(), this));
+
+	m_shell_surface.reset(
+		WL_CHK(wl_shell_get_shell_surface(shell, m_surface.get())));
+
+	m_window.reset(WL_CHK(wl_egl_window_create(m_surface.get(), width, height)));
+
+	m_egl_surface.reset(
+		EGL_CHK(eglCreateWindowSurface(egl_display, m_system->getEglConf(),
+			m_window.get(), NULL)),
+		egl_object_deleter<EGLSurface>(egl_display, eglDestroySurface));
+
+	WL_CHK(wl_shell_surface_set_user_data(m_shell_surface.get(), this));
+
 	setTitle(title);
 }
 
 GHOST_WindowWayland::~GHOST_WindowWayland()
 {
+	if (m_egl_context && m_egl_context.get() != EGL_NO_SURFACE)
+		context_make_current(EGL_NO_SURFACE);
 }
-
 
 GHOST_TSuccess
 GHOST_WindowWayland::installDrawingContext(GHOST_TDrawingContextType type)
@@ -58,9 +88,20 @@ GHOST_WindowWayland::installDrawingContext(GHOST_TDrawingContextType type)
 	// only support openGL for now.
 	GHOST_TSuccess success;
 	switch (type) {
-		case GHOST_kDrawingContextTypeOpenGL:
+		case GHOST_kDrawingContextTypeOpenGL: {
+			EGLDisplay egl_display = m_system->getEglDisplay();
+
+			m_egl_context.reset(EGL_CHK(eglCreateContext(egl_display,
+				m_system->getEglConf(), EGL_NO_CONTEXT, NULL)));
+
+			if (EGL_NO_SURFACE == m_egl_context.get())
+				return GHOST_kFailure;
+
+			context_make_current(m_egl_surface.get());
+
 			success = GHOST_kSuccess;
 			break;
+		}
 
 		case GHOST_kDrawingContextTypeNone:
 			success = GHOST_kSuccess;
@@ -83,13 +124,22 @@ GHOST_WindowWayland::invalidate(void)
 GHOST_TSuccess
 GHOST_WindowWayland::swapBuffers()
 {
-	return GHOST_kSuccess;
+	if (getDrawingContextType() == GHOST_kDrawingContextTypeOpenGL) {
+		EGL_CHK(eglSwapBuffers(
+			m_system->getEglDisplay(),
+			m_egl_surface.get()));
+		return GHOST_kSuccess;
+	}
+	else {
+		return GHOST_kFailure;
+	}
 }
 
 
 GHOST_TSuccess
 GHOST_WindowWayland::activateDrawingContext()
 {
+	context_make_current(m_egl_surface.get());
 	return GHOST_kSuccess;
 }
 
@@ -97,6 +147,7 @@ GHOST_WindowWayland::activateDrawingContext()
 GHOST_TSuccess
 GHOST_WindowWayland::removeDrawingContext()
 {
+	context_make_current(EGL_NO_SURFACE);
 	return GHOST_kSuccess;
 }
 
@@ -251,3 +302,16 @@ GHOST_WindowWayland::setWindowCursorVisibility(bool visible)
 	(void) visible;
 	return GHOST_kSuccess;
 }
+
+void
+GHOST_WindowWayland::context_make_current(EGLSurface surf)
+{
+	assert(m_egl_context && m_egl_context.get() != EGL_NO_SURFACE);
+
+	EGL_CHK(eglMakeCurrent(
+		m_system->getEglDisplay(),
+		surf,
+		surf,
+		m_egl_context.get()));
+}
+
