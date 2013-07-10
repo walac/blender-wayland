@@ -73,10 +73,10 @@ public:
 	void reset(const_reference r, D d)
 	{ this_type(r, d).swap(*this); }
 
-	typedef void (this_type::*unspecified_bool)();
+	typedef void (this_type::*unspecified_bool)(this_type&);
 
 	operator unspecified_bool() const
-	{ return r_ ? &this_type::reset : 0; }
+	{ return r_ ? &this_type::swap : 0; }
 
 private:
 	void delete_resource()
