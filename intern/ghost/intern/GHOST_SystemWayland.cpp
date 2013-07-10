@@ -61,7 +61,6 @@ GHOST_SystemWayland::GHOST_SystemWayland()
 	};
 
 	EGLint major, minor;
-	EGLint n;
 
 	m_registry.reset(WL_CHK(wl_display_get_registry(m_display.get())));
 	WL_CHK(wl_registry_add_listener(m_registry.get(), &registry_listener, this));
@@ -74,22 +73,8 @@ GHOST_SystemWayland::GHOST_SystemWayland()
 
 	EGL_CHK(eglBindAPI(EGL_OPENGL_API));
 
+	EGLint n;
 	EGL_CHK(eglChooseConfig(m_egl_display.get(), config_attribs, &m_conf, 1, &n));
-
-	m_egl_context.reset(
-		EGL_CHK(eglCreateContext(m_egl_display.get(), m_conf, EGL_NO_CONTEXT, NULL)),
-		egl_object_deleter<EGLContext>(m_egl_display.get(), eglDestroyContext));
-
-	EGL_CHK(eglMakeCurrent(m_egl_display.get(), NULL, NULL, m_egl_context.get()));
-}
-
-GHOST_SystemWayland::~GHOST_SystemWayland()
-{
-	EGL_CHK(eglMakeCurrent(
-		m_egl_display.get(),
-		EGL_NO_SURFACE,
-		EGL_NO_SURFACE,
-		EGL_NO_CONTEXT));
 }
 
 GHOST_IWindow *

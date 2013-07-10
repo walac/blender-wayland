@@ -50,7 +50,7 @@ class GHOST_SystemWayland : public GHOST_System {
 public:
 
 	GHOST_SystemWayland();
-	~GHOST_SystemWayland();
+	~GHOST_SystemWayland() {}
 
 	bool
 	processEvents(bool waitForEvent);
@@ -101,10 +101,7 @@ public:
 	EGLDisplay getEglDisplay()
 	{ return m_egl_display.get(); }
 
-	EGLContext getEglContext()
-	{ return m_egl_context.get(); }
-
-	EGLConfig getEglConfig()
+	EGLConfig getEglConf() const
 	{ return m_conf; }
 
 private:
@@ -152,7 +149,6 @@ private:
 	wayland_ptr<wl_compositor>::type m_compositor;
 	wayland_ptr<wl_shell>::type m_shell;
 	scoped_resource<EGLDisplay> m_egl_display;
-	scoped_resource<EGLContext> m_egl_context;
 	EGLConfig m_conf;
 };
 
