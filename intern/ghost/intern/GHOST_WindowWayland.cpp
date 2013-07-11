@@ -182,14 +182,16 @@ GHOST_WindowWayland::getState() const
 void
 GHOST_WindowWayland::setTitle(const STR_String& title)
 {
-	(void) title;
+	m_title = title.ReadPtr();
+	WL_CHK(wl_shell_surface_set_title(m_shell_surface.get(), m_title.c_str()));
 }
 
 
 void
 GHOST_WindowWayland::getTitle(STR_String& title) const
 {
-	title = "";
+	// does wayland have a function to get the Window title?
+	title = m_title.c_str();
 }
 
 

@@ -39,6 +39,8 @@ extern "C" {
 #include <EGL/egl.h>
 }
 
+#include <string>
+
 class STR_String;
 class GHOST_SystemWayland;
 
@@ -157,6 +159,8 @@ private:
 	scoped_resource<EGLSurface> m_egl_surface;
 	scoped_resource<EGLContext> m_egl_context;
 	EGLConfig m_conf;
+
+	std::string m_title;
 };
 
 #endif // __GHOST_WINDOWWAYLAND_H__
