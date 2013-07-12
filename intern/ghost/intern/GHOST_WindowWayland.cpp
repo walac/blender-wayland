@@ -48,6 +48,10 @@ GHOST_WindowWayland::GHOST_WindowWayland(GHOST_SystemWayland *system,
 	, m_window(NULL, wl_egl_window_destroy)
 	, m_egl_context(egl_object_deleter<EGLContext>(system->getEglDisplay(),
 			eglDestroyContext))
+	, m_x(left)
+	, m_y(top)
+	, m_width(width)
+	, m_height(height)
 {
 	wl_display *display = m_system->getDisplay();
 	wl_compositor *compositor = m_system->getCompositor();
@@ -74,6 +78,7 @@ GHOST_WindowWayland::GHOST_WindowWayland(GHOST_SystemWayland *system,
 	WL_CHK(wl_shell_surface_set_user_data(m_shell_surface.get(), this));
 
 	setTitle(title);
+	resize();
 }
 
 GHOST_WindowWayland::~GHOST_WindowWayland()
@@ -190,7 +195,6 @@ GHOST_WindowWayland::setTitle(const STR_String& title)
 void
 GHOST_WindowWayland::getTitle(STR_String& title) const
 {
-	// does wayland have a function to get the Window title?
 	title = m_title.c_str();
 }
 
@@ -205,23 +209,23 @@ GHOST_WindowWayland::getWindowBounds(GHOST_Rect& bounds) const
 void
 GHOST_WindowWayland::getClientBounds(GHOST_Rect& bounds) const
 {
-	bounds.m_l = 0;
-	bounds.m_r = 500;
-	bounds.m_t = 0;
-	bounds.m_b = 300;
+	bounds.m_l = m_x;
+	bounds.m_r = m_x + m_width;
+	bounds.m_t = m_y;
+	bounds.m_b = m_y + m_height;
 }
 
 GHOST_TSuccess
 GHOST_WindowWayland::setClientWidth(GHOST_TUns32 width)
 {
-	(void) width;
+	m_width = width;
 	return GHOST_kSuccess;
 }
 
 GHOST_TSuccess
 GHOST_WindowWayland::setClientHeight(GHOST_TUns32 height)
 {
-	(void) height;
+	m_height = height;
 	return GHOST_kSuccess;
 }
 
@@ -229,26 +233,22 @@ GHOST_TSuccess
 GHOST_WindowWayland::setClientSize(GHOST_TUns32 width,
 		GHOST_TUns32 height)
 {
-	(void) width;
-	(void) height;
+	m_width = width;
+	m_height = height;
 	return GHOST_kSuccess;
 }
 
 void
 GHOST_WindowWayland::screenToClient(GHOST_TInt32 inX, GHOST_TInt32 inY, GHOST_TInt32& outX, GHOST_TInt32& outY) const
 {
-	(void) inX;
-	(void) inY;
-	(void) outX;
-	(void) outY;
+	outX = inX - m_x;
+	outY = inY - m_x;
 }
 void
 GHOST_WindowWayland::clientToScreen(GHOST_TInt32 inX, GHOST_TInt32 inY, GHOST_TInt32& outX, GHOST_TInt32& outY) const
 {
-	(void) inX;
-	(void) inY;
-	(void) outX;
-	(void) outY;
+	outX = inX + m_x;
+	outY = inY + m_x;
 }
 
 GHOST_TSuccess
@@ -317,3 +317,13 @@ GHOST_WindowWayland::context_make_current(EGLSurface surf)
 		m_egl_context.get()));
 }
 
+void
+GHOST_WindowWayland::resize(void)
+{
+	WL_CHK(wl_egl_window_resize(
+		m_window.get(),
+		m_width,
+		m_height,
+		m_x,
+		m_y));
+}

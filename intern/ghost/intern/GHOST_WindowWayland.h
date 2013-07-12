@@ -150,6 +150,8 @@ private:
 
 	void context_make_current(EGLSurface surf);
 
+	void resize(void);
+
 	GHOST_SystemWayland  *m_system;
 	bool m_invalid_window;
 
@@ -161,6 +163,10 @@ private:
 	EGLConfig m_conf;
 
 	std::string m_title;
+	int m_x;
+	int m_y;
+	int m_width;
+	int m_height;
 };
 
 #endif // __GHOST_WINDOWWAYLAND_H__
