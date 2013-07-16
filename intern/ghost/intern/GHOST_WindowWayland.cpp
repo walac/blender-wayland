@@ -219,6 +219,7 @@ GHOST_TSuccess
 GHOST_WindowWayland::setClientWidth(GHOST_TUns32 width)
 {
 	m_width = width;
+	resize();
 	return GHOST_kSuccess;
 }
 
@@ -226,6 +227,7 @@ GHOST_TSuccess
 GHOST_WindowWayland::setClientHeight(GHOST_TUns32 height)
 {
 	m_height = height;
+	resize();
 	return GHOST_kSuccess;
 }
 
@@ -235,6 +237,7 @@ GHOST_WindowWayland::setClientSize(GHOST_TUns32 width,
 {
 	m_width = width;
 	m_height = height;
+	resize();
 	return GHOST_kSuccess;
 }
 
