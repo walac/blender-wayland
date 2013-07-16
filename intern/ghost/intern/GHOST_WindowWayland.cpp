@@ -52,6 +52,7 @@ GHOST_WindowWayland::GHOST_WindowWayland(GHOST_SystemWayland *system,
 	, m_y(top)
 	, m_width(width)
 	, m_height(height)
+	, m_state(GHOST_kWindowStateNormal)
 {
 	wl_display *display = m_system->getDisplay();
 	wl_compositor *compositor = m_system->getCompositor();
@@ -156,21 +157,24 @@ GHOST_WindowWayland::removeDrawingContext()
 	return GHOST_kSuccess;
 }
 
-
 GHOST_TSuccess
 GHOST_WindowWayland::setState(GHOST_TWindowState state)
 {
-	switch (state) {
-		case GHOST_kWindowStateNormal:
-			break;
-		case GHOST_kWindowStateMaximized:
-			break;
-		case GHOST_kWindowStateMinimized:
-			break;
-		case GHOST_kWindowStateFullScreen:
-			break;
-		default:
-			break;
+	if (m_state != state) {
+		m_state = state;
+
+		switch (state) {
+			case GHOST_kWindowStateNormal:
+				break;
+			case GHOST_kWindowStateMaximized:
+				break;
+			case GHOST_kWindowStateMinimized:
+				break;
+			case GHOST_kWindowStateFullScreen:
+				break;
+			default:
+				break;
+		}
 	}
 
 	return GHOST_kSuccess;
@@ -180,7 +184,7 @@ GHOST_WindowWayland::setState(GHOST_TWindowState state)
 GHOST_TWindowState
 GHOST_WindowWayland::getState() const
 {
-	return GHOST_kWindowStateNormal;
+	return m_state;
 }
 
 

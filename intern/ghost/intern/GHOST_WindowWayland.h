@@ -167,6 +167,8 @@ private:
 	int m_y;
 	int m_width;
 	int m_height;
+
+	GHOST_TWindowState m_state;
 };
 
 #endif // __GHOST_WINDOWWAYLAND_H__
