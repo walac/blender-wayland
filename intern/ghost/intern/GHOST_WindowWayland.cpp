@@ -64,7 +64,6 @@ GHOST_WindowWayland::GHOST_WindowWayland(GHOST_SystemWayland *system,
 	assert(shell);
 
 	m_surface.reset(WL_CHK(wl_compositor_create_surface(compositor)));
-	wl_surface_set_user_data(m_surface.get(), this);
 
 	m_shell_surface.reset(
 		WL_CHK(wl_shell_get_shell_surface(shell, m_surface.get())));
@@ -75,8 +74,6 @@ GHOST_WindowWayland::GHOST_WindowWayland(GHOST_SystemWayland *system,
 		EGL_CHK(eglCreateWindowSurface(egl_display, m_system->getEglConf(),
 			m_window.get(), NULL)),
 		egl_object_deleter<EGLSurface>(egl_display, eglDestroySurface));
-
-	wl_shell_surface_set_user_data(m_shell_surface.get(), this);
 
 	setTitle(title);
 	resize();
