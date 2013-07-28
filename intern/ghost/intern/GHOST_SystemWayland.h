@@ -36,6 +36,7 @@
 #include "GHOST_Event.h"
 #include "scoped_resource.h"
 #include "wayland_util.h"
+#include "wayland_events.h"
 
 extern "C" {
 #include "wayland-client.h"
@@ -46,7 +47,10 @@ extern "C" {
 
 class GHOST_WindowWayland;
 
-class GHOST_SystemWayland : public GHOST_System {
+class GHOST_SystemWayland
+	: public GHOST_System
+	, public wl::registry_events
+{
 public:
 
 	GHOST_SystemWayland();
@@ -106,6 +110,14 @@ public:
 
 private:
 
+	virtual void global(
+			struct wl_registry *registry,
+			uint32_t id,
+			const char *interface,
+			uint32_t version);
+
+private:
+
 	GHOST_TSuccess
 	init();
 
@@ -122,19 +134,6 @@ private:
 	             const GHOST_TUns16 numOfAASamples = 0,
 	             const GHOST_TEmbedderWindowID parentWindow = 0
 	             );
-
-	static void display_handle_global(
-			void *data,
-			struct wl_registry *registry,
-			uint32_t id,
-			const char *interface,
-			uint32_t version);
-
-	void display_handle(
-			struct wl_registry *registry,
-			uint32_t id,
-			const char *interface,
-			uint32_t version);
 
 	template<typename T>
 	void registry_bind(
