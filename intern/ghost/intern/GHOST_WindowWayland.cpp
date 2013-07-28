@@ -64,7 +64,7 @@ GHOST_WindowWayland::GHOST_WindowWayland(GHOST_SystemWayland *system,
 	assert(shell);
 
 	m_surface.reset(WL_CHK(wl_compositor_create_surface(compositor)));
-	WL_CHK(wl_surface_set_user_data(m_surface.get(), this));
+	wl_surface_set_user_data(m_surface.get(), this);
 
 	m_shell_surface.reset(
 		WL_CHK(wl_shell_get_shell_surface(shell, m_surface.get())));
@@ -76,7 +76,7 @@ GHOST_WindowWayland::GHOST_WindowWayland(GHOST_SystemWayland *system,
 			m_window.get(), NULL)),
 		egl_object_deleter<EGLSurface>(egl_display, eglDestroySurface));
 
-	WL_CHK(wl_shell_surface_set_user_data(m_shell_surface.get(), this));
+	wl_shell_surface_set_user_data(m_shell_surface.get(), this);
 
 	setTitle(title);
 	resize();
@@ -192,7 +192,7 @@ void
 GHOST_WindowWayland::setTitle(const STR_String& title)
 {
 	m_title = title.ReadPtr();
-	WL_CHK(wl_shell_surface_set_title(m_shell_surface.get(), m_title.c_str()));
+	wl_shell_surface_set_title(m_shell_surface.get(), m_title.c_str());
 }
 
 
@@ -327,10 +327,10 @@ GHOST_WindowWayland::context_make_current(EGLSurface surf)
 void
 GHOST_WindowWayland::resize(void)
 {
-	WL_CHK(wl_egl_window_resize(
+	wl_egl_window_resize(
 		m_window.get(),
 		m_width,
 		m_height,
 		m_x,
-		m_y));
+		m_y);
 }
