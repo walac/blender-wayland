@@ -1,8 +1,8 @@
-#include "wayland_events.h"
+#include "wayland_listeners.h"
 
 namespace wl {
 
-void display_events::error(
+void display_listener::error(
 	struct wl_display *display,
 	struct wl_object *object_id,
 	uint32_t code,
@@ -10,13 +10,13 @@ void display_events::error(
 {
 }
 
-void display_events::delete_id(
+void display_listener::delete_id(
 	struct wl_display *display,
 	uint32_t id)
 {
 }
 
-void registry_events::global(
+void registry_listener::global(
 	struct wl_registry *registry,
 	uint32_t name,
 	const char *interface,
@@ -24,56 +24,56 @@ void registry_events::global(
 {
 }
 
-void registry_events::global_remove(
+void registry_listener::global_remove(
 	struct wl_registry *registry,
 	uint32_t name)
 {
 }
 
-void callback_events::done(
+void callback_listener::done(
 	struct wl_callback *callback,
 	uint32_t serial)
 {
 }
 
-void shm_events::format(
+void shm_listener::format(
 	struct wl_shm *shm,
 	uint32_t format)
 {
 }
 
-void buffer_events::release(struct wl_buffer *buffer)
+void buffer_listener::release(struct wl_buffer *buffer)
 {
 }
 
-void data_offer_events::offer(struct wl_data_offer *data_offer, const char *type)
+void data_offer_listener::offer(struct wl_data_offer *data_offer, const char *type)
 {
 }
 
-void data_source_events::target(
+void data_source_listener::target(
 	struct wl_data_source *data_source,
 	const char *mime_type)
 {
 }
 
-void data_source_events::send(
+void data_source_listener::send(
 	struct wl_data_sourcce *data_source,
 	const char *mime_type,
 	int32_t fd)
 {
 }
 
-void data_source_events::cancelled(struct wl_data_source *data_source)
+void data_source_listener::cancelled(struct wl_data_source *data_source)
 {
 }
 
-void data_device_events::data_offer(
+void data_device_listener::data_offer(
 	struct wl_data_device *data_device,
 	struct wl_data_offer *id)
 {
 }
 
-void data_device_events::enter(
+void data_device_listener::enter(
 	struct wl_data_device *data_device,
 	uint32_t serial,
 	struct wl_surface *surface,
@@ -83,11 +83,11 @@ void data_device_events::enter(
 {
 }
 
-void data_device_events::leave(struct wl_data_device *data_device)
+void data_device_listener::leave(struct wl_data_device *data_device)
 {
 }
 
-void data_device_events::motion(
+void data_device_listener::motion(
 	struct wl_data_device *wl_data_device,
 	uint32_t time,
 	wl_fixed_t x,
@@ -95,23 +95,23 @@ void data_device_events::motion(
 {
 }
 
-void data_device_events::drop(struct wl_data_device *data_device)
+void data_device_listener::drop(struct wl_data_device *data_device)
 {
 }
 
-void data_device_events::selection(
+void data_device_listener::selection(
 	struct wl_data_device *data_device,
 	struct wl_data_offer *id)
 {
 }
 
-void shell_surface_events::ping(
+void shell_surface_listener::ping(
 	struct wl_shell_surface *shell_surface,
 	uint32_t serial)
 {
 }
 
-void shell_surface_events::configure(
+void shell_surface_listener::configure(
 	struct wl_shell_surface *shell_surface,
 	uint32_t edges,
 	int32_t width,
@@ -119,29 +119,29 @@ void shell_surface_events::configure(
 {
 }
 
-void shell_surface_events::popup_done(struct wl_shell_surface *shell_surface)
+void shell_surface_listener::popup_done(struct wl_shell_surface *shell_surface)
 {
 }
 
-void surface_events::enter(
+void surface_listener::enter(
 	struct wl_surface *surface,
 	struct wl_output *output)
 {
 }
 
-void surface_events::leave(
+void surface_listener::leave(
 	struct wl_surface *wl_surface,
 	struct wl_output *output)
 {
 }
 
-void seat_events::capabilities(
+void seat_listener::capabilities(
 	 struct wl_seat *seat,
 	 uint32_t capabilities)
 {
 }
 
-void pointer_events::enter(
+void pointer_listener::enter(
 	struct wl_pointer *pointer,
 	uint32_t serial,
 	struct wl_surface *surface,
@@ -150,14 +150,14 @@ void pointer_events::enter(
 {
 }
 
-void pointer_events::leave(
+void pointer_listener::leave(
 	struct wl_pointer *pointer,
 	uint32_t serial,
 	struct wl_surface *surface)
 {
 }
 
-void pointer_events::motion(
+void pointer_listener::motion(
 	struct wl_pointer *pointer,
 	uint32_t time,
 	wl_fixed_t surface_x,
@@ -165,7 +165,7 @@ void pointer_events::motion(
 {
 }
 
-void pointer_events::button(
+void pointer_listener::button(
 	struct wl_pointer *pointer,
 	uint32_t serial,
 	uint32_t time,
@@ -174,7 +174,7 @@ void pointer_events::button(
 {
 }
 
-void pointer_events::axis(
+void pointer_listener::axis(
 	struct wl_pointer *pointer,
 	uint32_t time,
 	uint32_t axis,
@@ -182,7 +182,7 @@ void pointer_events::axis(
 {
 }
 
-void keyboard_events::keymap(
+void keyboard_listener::keymap(
 	struct wl_keyboard *keyboard,
 	uint32_t format,
 	int32_t fd,
@@ -190,7 +190,7 @@ void keyboard_events::keymap(
 {
 }
 
-void keyboard_events::enter(
+void keyboard_listener::enter(
 	struct wl_keyboard *keyboard,
 	uint32_t serial,
 	struct wl_surface *surface,
@@ -198,14 +198,14 @@ void keyboard_events::enter(
 {
 }
 
-void keyboard_events::leave(
+void keyboard_listener::leave(
 	struct wl_keyboard *keyboard,
 	uint32_t serial,
 	struct wl_surface *surface)
 {
 }
 
-void keyboard_events::key(
+void keyboard_listener::key(
 	struct wl_keyboard *keyboard,
 	uint32_t serial,
 	uint32_t time,
@@ -214,7 +214,7 @@ void keyboard_events::key(
 {
 }
 
-void keyboard_events::modifiers(
+void keyboard_listener::modifiers(
 	struct wl_keyboard *keyboard,
 	uint32_t serial,
 	uint32_t mods_depressed,
@@ -224,7 +224,7 @@ void keyboard_events::modifiers(
 {
 }
 
-void touch_events::down(
+void touch_listener::down(
 	struct wl_touch *touch,
 	uint32_t serial,
 	uint32_t time,
@@ -235,7 +235,7 @@ void touch_events::down(
 {
 }
 
-void touch_events::up(
+void touch_listener::up(
 	struct wl_touch *touch,
 	uint32_t serial,
 	uint32_t time,
@@ -243,7 +243,7 @@ void touch_events::up(
 {
 }
 
-void touch_events::motion(
+void touch_listener::motion(
 	struct wl_touch *touch,
 	uint32_t time,
 	int32_t id,
@@ -252,15 +252,15 @@ void touch_events::motion(
 {
 }
 
-void touch_events::frame(struct wl_touch *touch)
+void touch_listener::frame(struct wl_touch *touch)
 {
 }
 
-void touch_events::cancel(struct wl_touch *touch)
+void touch_listener::cancel(struct wl_touch *touch)
 {
 }
 
-void output_events::geometry(
+void output_listener::geometry(
 	struct wl_output *output,
 	int32_t x,
 	int32_t y,
@@ -273,7 +273,7 @@ void output_events::geometry(
 {
 }
 
-void output_events::mode(
+void output_listener::mode(
 	struct wl_output *output,
 	uint32_t flags,
 	int32_t width,

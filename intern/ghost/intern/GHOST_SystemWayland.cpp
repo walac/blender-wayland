@@ -60,7 +60,7 @@ GHOST_SystemWayland::GHOST_SystemWayland()
 
 	m_registry.reset(WL_CHK(wl_display_get_registry(m_display.get())));
 
-	wl::add_listener<wl::registry_events>(this, m_registry.get());
+	wl::add_listener<wl::registry_listener>(this, m_registry.get());
 
 	WL_CHK(wl_display_dispatch(m_display.get()));
 

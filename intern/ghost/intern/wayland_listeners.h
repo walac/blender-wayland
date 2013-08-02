@@ -1,5 +1,5 @@
-#ifndef GHOST_WAYLAND_EVENTS_H_
-#define GHOST_WAYLAND_EVENTS_H_
+#ifndef GHOST_WAYLAND_LISTENERS_H_
+#define GHOST_WAYLAND_LISTENERS_H_
 
 #include <wayland-client.h>
 #include <wayland-client-protocol.h>
@@ -7,7 +7,7 @@
 
 namespace wl {
 
-class display_events {
+class display_listener {
 	virtual void error(
 		struct wl_display *display,
 		struct wl_object *object_id,
@@ -19,7 +19,7 @@ class display_events {
 		uint32_t id);
 };
 
-class registry_events {
+class registry_listener {
 	virtual void global(
 		struct wl_registry *registry,
 		uint32_t name,
@@ -31,27 +31,27 @@ class registry_events {
 		uint32_t name);
 };
 
-class callback_events {
+class callback_listener {
 	virtual void done(
 		struct wl_callback *callback,
 		uint32_t serial);
 };
 
-class shm_events {
+class shm_listener {
 	virtual void format(
 		struct wl_shm *shm,
 		uint32_t format);
 };
 
-class buffer_events {
+class buffer_listener {
 	virtual void release(struct wl_buffer *buffer);
 };
 
-class data_offer_events {
+class data_offer_listener {
 	virtual void offer(struct wl_data_offer *data_offer, const char *type);
 };
 
-class data_source_events {
+class data_source_listener {
 	virtual void target(
 		struct wl_data_source *data_source,
 		const char *mime_type);
@@ -64,7 +64,7 @@ class data_source_events {
 	virtual void cancelled(struct wl_data_source *data_source);
 };
 
-class data_device_events {
+class data_device_listener {
 	virtual void data_offer(
 		struct wl_data_device *data_device,
 		struct wl_data_offer *id);
@@ -92,7 +92,7 @@ class data_device_events {
 		struct wl_data_offer *id);
 };
 
-class shell_surface_events {
+class shell_surface_listener {
 	virtual void ping(
 		struct wl_shell_surface *shell_surface,
 		uint32_t serial);
@@ -106,7 +106,7 @@ class shell_surface_events {
 	virtual void popup_done(struct wl_shell_surface *shell_surface);
 };
 
-class surface_events {
+class surface_listener {
 	virtual void enter(
 		struct wl_surface *surface,
 		struct wl_output *output);
@@ -116,14 +116,14 @@ class surface_events {
 		struct wl_output *output);
 };
 
-class seat_events {
+class seat_listener {
 	virtual void capabilities(
 		 struct wl_seat *seat,
 		 uint32_t capabilities);
 
 };
 
-class pointer_events {
+class pointer_listener {
 	virtual void enter(
 		struct wl_pointer *pointer,
 		uint32_t serial,
@@ -156,7 +156,7 @@ class pointer_events {
 		wl_fixed_t value);
 };
 
-class keyboard_events {
+class keyboard_listener {
 	virtual void keymap(
 		struct wl_keyboard *keyboard,
 		uint32_t format,
@@ -190,7 +190,7 @@ class keyboard_events {
 		uint32_t group);
 };
 
-class touch_events {
+class touch_listener {
 	virtual void down(
 		struct wl_touch *touch,
 		uint32_t serial,
@@ -218,7 +218,7 @@ class touch_events {
 	virtual void cancel(struct wl_touch *touch);
 };
 
-class output_events {
+class output_listener {
 	virtual void geometry(
 		struct wl_output *output,
 		int32_t x,
@@ -258,4 +258,4 @@ void set_user_data(T *object, U *data)
 
 }
 
-#endif // GHOST_WAYLAND_EVENTS_H_
+#endif // GHOST_WAYLAND_LISTENERS_H_

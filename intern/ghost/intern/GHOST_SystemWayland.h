@@ -36,7 +36,7 @@
 #include "GHOST_Event.h"
 #include "scoped_resource.h"
 #include "wayland_util.h"
-#include "wayland_events.h"
+#include "wayland_listeners.h"
 
 extern "C" {
 #include "wayland-client.h"
@@ -49,7 +49,7 @@ class GHOST_WindowWayland;
 
 class GHOST_SystemWayland
 	: public GHOST_System
-	, public wl::registry_events
+	, public wl::registry_listener
 {
 public:
 
