@@ -26,6 +26,9 @@
 
 #include <cassert>
 #include <memory>
+#include <boost/bind.hpp>
+#include <boost/asio/placeholders.hpp>
+#include <boost/date_time/posix_time/posix_time_duration.hpp>
 
 #include "GHOST_SystemWayland.h"
 #include "GHOST_WindowWayland.h"
@@ -44,6 +47,8 @@ GHOST_SystemWayland::GHOST_SystemWayland()
 	, m_compositor(NULL, wl_compositor_destroy)
 	, m_shell(NULL, wl_shell_destroy)
 	, m_egl_display(eglTerminate)
+	, m_display_fd(m_io_service)
+	, m_dispatch_timer(m_io_service)
 {
 	static const EGLint config_attribs[] = {
 		EGL_SURFACE_TYPE, EGL_WINDOW_BIT,
@@ -72,6 +77,14 @@ GHOST_SystemWayland::GHOST_SystemWayland()
 
 	EGLint n;
 	EGL_CHK(eglChooseConfig(m_egl_display.get(), config_attribs, &m_conf, 1, &n));
+
+	m_display_fd.assign(wl_display_get_fd(m_display.get()));
+}
+
+GHOST_SystemWayland::~GHOST_SystemWayland()
+{
+	m_display_fd.release();
+	WL_CHK(wl_display_flush(m_display.get()));
 }
 
 GHOST_IWindow *
@@ -124,6 +137,37 @@ GHOST_SystemWayland::init() {
 	}
 
 	return GHOST_kFailure;
+}
+
+void
+GHOST_SystemWayland::dispatch_events(const boost::system::error_code &ec, bool &any_processed)
+{
+	m_dispatch_timer.cancel();
+
+	if (ec) {
+#ifdef GHOST_DEBUG
+		fprintf(stderr, "GHOST_SystemWayland::dispatch_events: %s\n",
+			ec.message().c_str());
+#endif // GHOST_DEBUG
+		return;
+	}
+
+	if (WL_CHK(wl_display_dispatch(m_display.get())) > 0)
+		any_processed = true;
+}
+
+void
+GHOST_SystemWayland::dispatch_timeout(const boost::system::error_code &ec)
+{
+	m_display_fd.cancel();
+
+#ifdef GHOST_DEBUG
+	if (ec)
+		fprintf(stderr, "GHOST_SystemWayland::dispatch_timeout: %s\n",
+			ec.message().c_str());
+#else
+	(void) ec;
+#endif // GHOST_DEBUG
 }
 
 /**
@@ -183,16 +227,47 @@ GHOST_SystemWayland::processEvents(bool waitForEvent)
 	// Get all the current events -- translate them into
 	// ghost events and call base class pushEvent() method.
 
+	using boost::posix_time::milliseconds;
+	using namespace boost::asio;
+
 	bool anyProcessed = false;
+	GHOST_TimerManager *timerMgr = getTimerManager();
 
 	do {
-		GHOST_TimerManager *timerMgr = getTimerManager();
-		(void) timerMgr;
+		if (WL_CHK(wl_display_dispatch_pending(m_display.get())) <= 0 && waitForEvent) {
+			const GHOST_TUns64 next = timerMgr->nextFireTime();
+			const GHOST_TUns64 cur_milliseconds = getMilliSeconds();
 
-		if (waitForEvent) {
+			if (GHOST_kFireTimeNever == next) {
+				if (WL_CHK(wl_display_dispatch(m_display.get())) > 0)
+					anyProcessed = true;
+			} else if (cur_milliseconds < next) {
+				const GHOST_TUns64 wait_time = next - cur_milliseconds;
+
+				// with a null_buffer our callback will be called when
+				// there bytes available but no reading will happen
+				m_display_fd.async_read_some(
+					null_buffers(),
+					boost::bind(
+						&GHOST_SystemWayland::dispatch_events,
+						this,
+						placeholders::error(),
+						boost::ref(anyProcessed)));
+
+				// timeout
+				m_dispatch_timer.expires_from_now(milliseconds(wait_time));
+				m_dispatch_timer.async_wait(
+					boost::bind(
+						&GHOST_SystemWayland::dispatch_timeout,
+						this,
+						placeholders::error()));
+
+				m_io_service.run_one();
+			}
 		}
 
-		anyProcessed = true;
+		if (timerMgr->fireTimers(getMilliSeconds()))
+			anyProcessed = true;
 	} while (waitForEvent && !anyProcessed);
 
 	return anyProcessed;

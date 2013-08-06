@@ -39,11 +39,14 @@
 #include "wayland_listeners.h"
 
 extern "C" {
-#include "wayland-client.h"
-#include "EGL/egl.h"
+#include <wayland-client.h>
+#include <EGL/egl.h>
 }
 
 #include <cstring>
+#include <boost/asio/io_service.hpp>
+#include <boost/asio/deadline_timer.hpp>
+#include <boost/asio/posix/stream_descriptor.hpp>
 
 class GHOST_WindowWayland;
 
@@ -54,7 +57,7 @@ class GHOST_SystemWayland
 public:
 
 	GHOST_SystemWayland();
-	~GHOST_SystemWayland() {}
+	~GHOST_SystemWayland();
 
 	bool
 	processEvents(bool waitForEvent);
@@ -143,12 +146,19 @@ private:
 		uint32_t id,
 		const wl_interface *interface);
 
+	void dispatch_events(const boost::system::error_code &ec, bool &any_processed);
+	void dispatch_timeout(const boost::system::error_code &ec);
+
+private:
 	wayland_ptr<wl_display>::type m_display;
 	wayland_ptr<wl_registry>::type m_registry;
 	wayland_ptr<wl_compositor>::type m_compositor;
 	wayland_ptr<wl_shell>::type m_shell;
 	scoped_resource<EGLDisplay> m_egl_display;
 	EGLConfig m_conf;
+	boost::asio::io_service m_io_service;
+	boost::asio::posix::stream_descriptor m_display_fd;
+	boost::asio::deadline_timer m_dispatch_timer;
 };
 
 template<typename T> void
