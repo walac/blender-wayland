@@ -150,10 +150,10 @@ private:
 	void dispatch_timeout(const boost::system::error_code &ec);
 
 private:
-	wayland_ptr<wl_display>::type m_display;
-	wayland_ptr<wl_registry>::type m_registry;
-	wayland_ptr<wl_compositor>::type m_compositor;
-	wayland_ptr<wl_shell>::type m_shell;
+	wl::unique_ptr<wl_display> m_display;
+	wl::unique_ptr<wl_registry> m_registry;
+	wl::unique_ptr<wl_compositor> m_compositor;
+	wl::unique_ptr<wl_shell> m_shell;
 	scoped_resource<EGLDisplay> m_egl_display;
 	EGLConfig m_conf;
 	boost::asio::io_service m_io_service;

@@ -28,60 +28,116 @@
 #include <functional>
 #include <boost/function.hpp>
 #include <EGL/egl.h>
-
-// Wayland error treatment
-
-void
-wl_report_error(const char *expr, const char *srcfile, size_t linenumber);
-
-int
-wl_error_check(int result, const char *expr, const char *srcfile, size_t linenumber);
-
-template<typename T> T *
-wl_error_check(T *result, const char *expr, const char *srcfile, size_t linenumber)
-{
-	if (!result)
-		wl_report_error(expr, srcfile, linenumber);
-
-	return result;
-}
-
-// EGL error treatment
-
-void
-egl_report_error(const char *expr, const char *srcfile, size_t linenumber);
-
-EGLBoolean
-egl_error_check(EGLBoolean result, const char *expr, const char *srcfile, size_t linenumber);
-
-template<typename T> T *
-egl_error_check(T *result, const char *expr, const char *srcfile, size_t linenumber)
-{
-	if (!result)
-		egl_report_error(expr, srcfile, linenumber);
-
-	return result;
-}
+#include <wayland-client.h>
 
 #ifdef GHOST_DEBUG
-#define EGL_CHK(expr) egl_error_check(expr, #expr, __FILE__, __LINE__)
-#define WL_CHK(expr) wl_error_check(expr, #expr, __FILE__, __LINE__)
+#define EGL_CHK(expr) egl::error_check(expr, #expr, __FILE__, __LINE__)
+#define WL_CHK(expr) wl::error_check(expr, #expr, __FILE__, __LINE__)
 #else
 #define EGL_CHK(expr) expr
 #define WL_CHK(expr) expr
 #endif /* GHOST_DEBUG */
 
-template<typename T>
-struct wayland_ptr {
-	typedef boost::interprocess::unique_ptr<T, void(*)(T*)> type;
-};
+namespace wl {
+
+// Wayland error treatment
+
+void
+report_error(const char *expr, const char *srcfile, size_t linenumber);
+
+int
+error_check(int result, const char *expr, const char *srcfile, size_t linenumber);
+
+template<typename T> T *
+error_check(T *result, const char *expr, const char *srcfile, size_t linenumber)
+{
+	if (!result)
+		report_error(expr, srcfile, linenumber);
+
+	return result;
+}
+
+// Wayland utilities
+
+template<typename B, typename D, typename Proxy> void
+add_listener(D *pthis, Proxy *object)
+{
+	wl_proxy *proxy = reinterpret_cast<wl_proxy *> (object);
+	B *b = dynamic_cast<B*> (pthis);
+	assert(b);
+	wl_proxy_add_listener(proxy,
+		*reinterpret_cast<void(***)(void)> (b), b);
+}
+
+template<typename T, typename U> inline void
+set_user_data(T *object, U *data)
+{
+	wl_proxy_set_user_data(
+		reinterpret_cast<wl_proxy *> (object),
+		static_cast<void *> (data));
+}
+
+template<typename T> inline void
+destroy(T *object)
+{
+	wl_proxy_destroy(reinterpret_cast<wl_proxy*> (object));
+}
+
+inline void
+destroy(wl_display *display)
+{
+	wl_display_disconnect(display);
+}
+
+namespace detail {
+	// empty base optimization
+	template<typename T>
+	struct destroyer : std::unary_function<void, T*> {
+		void operator()(T *p)
+		{
+			destroy(p);
+		}
+	};
+}
 
 template<typename T>
-struct egl_object_deleter
+struct unique_ptr
+	: public boost::interprocess::unique_ptr<T, detail::destroyer<T> >
+{
+	typedef boost::interprocess::unique_ptr<T, detail::destroyer<T> > base_type;
+	using base_type::pointer;
+
+	unique_ptr(T *p = NULL) : base_type(p, detail::destroyer<T>()) { }
+};
+
+}
+
+namespace egl {
+
+// EGL error treatment
+
+void
+report_error(const char *expr, const char *srcfile, size_t linenumber);
+
+EGLBoolean
+error_check(EGLBoolean result, const char *expr, const char *srcfile, size_t linenumber);
+
+template<typename T> T *
+error_check(T *result, const char *expr, const char *srcfile, size_t linenumber)
+{
+	if (!result)
+		report_error(expr, srcfile, linenumber);
+
+	return result;
+}
+
+// generic EGL objects deleter
+template<typename T>
+struct object_deleter
 	: public std::unary_function<void, T>
 {
 	template<typename D>
-	egl_object_deleter(EGLDisplay disp, D d)
+	object_deleter(EGLDisplay disp, D d)
 		: disp(disp), deleter(d)
 	{ }
 
@@ -91,5 +147,7 @@ struct egl_object_deleter
 	EGLDisplay disp;
 	boost::function<EGLBoolean(EGLDisplay, T)> deleter;
 };
+
+}
 
 #endif /* WAYLAND_UTIL_H_ */

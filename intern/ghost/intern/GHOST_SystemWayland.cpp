@@ -42,10 +42,7 @@
 
 GHOST_SystemWayland::GHOST_SystemWayland()
 	: GHOST_System()
-	, m_display(wl_display_connect(NULL), wl_display_disconnect)
-	, m_registry(NULL, wl_registry_destroy)
-	, m_compositor(NULL, wl_compositor_destroy)
-	, m_shell(NULL, wl_shell_destroy)
+	, m_display(wl_display_connect(NULL))
 	, m_egl_display(eglTerminate)
 	, m_display_fd(m_io_service)
 	, m_dispatch_timer(m_io_service)

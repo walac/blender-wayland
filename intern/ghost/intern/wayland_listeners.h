@@ -1,7 +1,6 @@
 #ifndef GHOST_WAYLAND_LISTENERS_H_
 #define GHOST_WAYLAND_LISTENERS_H_
 
-#include <wayland-client.h>
 #include <wayland-client-protocol.h>
 #include <cassert>
 
@@ -237,24 +236,6 @@ class output_listener {
 		int32_t height,
 		int32_t refresh);
 };
-
-template<typename B, typename D, typename Proxy>
-void add_listener(D *pthis, Proxy *object)
-{
-	wl_proxy *proxy = reinterpret_cast<wl_proxy *> (object);
-	B *b = dynamic_cast<B*> (pthis);
-	assert(b);
-	wl_proxy_add_listener(proxy,
-		*reinterpret_cast<void(***)(void)> (b), b);
-}
-
-template<typename T, typename U>
-void set_user_data(T *object, U *data)
-{
-	wl_proxy_set_user_data(
-		reinterpret_cast<wl_proxy *> (object),
-		static_cast<void *> (data));
-}
 
 }
 

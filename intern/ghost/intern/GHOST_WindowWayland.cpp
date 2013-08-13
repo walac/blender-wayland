@@ -43,10 +43,7 @@ GHOST_WindowWayland::GHOST_WindowWayland(GHOST_SystemWayland *system,
                                  )
 	: GHOST_Window(width, height, state, type, stereoVisual, exclusive, numOfAASamples)
 	, m_system(system)
-	, m_surface(NULL, wl_surface_destroy)
-	, m_shell_surface(NULL, wl_shell_surface_destroy)
-	, m_window(NULL, wl_egl_window_destroy)
-	, m_egl_context(egl_object_deleter<EGLContext>(system->getEglDisplay(),
+	, m_egl_context(egl::object_deleter<EGLContext>(system->getEglDisplay(),
 			eglDestroyContext))
 	, m_x(left)
 	, m_y(top)
@@ -75,7 +72,7 @@ GHOST_WindowWayland::GHOST_WindowWayland(GHOST_SystemWayland *system,
 	m_egl_surface.reset(
 		EGL_CHK(eglCreateWindowSurface(egl_display, m_system->getEglConf(),
 			m_window.get(), NULL)),
-		egl_object_deleter<EGLSurface>(egl_display, eglDestroySurface));
+		egl::object_deleter<EGLSurface>(egl_display, eglDestroySurface));
 
 	setTitle(title);
 	resize();

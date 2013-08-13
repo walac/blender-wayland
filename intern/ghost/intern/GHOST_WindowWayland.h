@@ -162,9 +162,9 @@ private:
 	GHOST_SystemWayland  *m_system;
 	bool m_invalid_window;
 
-	wayland_ptr<wl_surface>::type m_surface;
-	wayland_ptr<wl_shell_surface>::type m_shell_surface;
-	wayland_ptr<wl_egl_window>::type m_window;
+	wl::unique_ptr<wl_surface> m_surface;
+	wl::unique_ptr<wl_shell_surface> m_shell_surface;
+	wl::unique_ptr<wl_egl_window> m_window;
 	scoped_resource<EGLSurface> m_egl_surface;
 	scoped_resource<EGLContext> m_egl_context;
 	EGLConfig m_conf;
