@@ -31,6 +31,7 @@
 #include "GHOST_Window.h"
 #include "GHOST_SystemWayland.h"
 #include "wayland_util.h"
+#include "wayland_listeners.h"
 #include "scoped_resource.h"
 
 extern "C" {
@@ -44,7 +45,9 @@ extern "C" {
 class STR_String;
 class GHOST_SystemWayland;
 
-class GHOST_WindowWayland : public GHOST_Window
+class GHOST_WindowWayland
+	: public GHOST_Window
+	, public wl::shell_surface_listener
 {
 public:
 
@@ -151,6 +154,10 @@ private:
 	void context_make_current(EGLSurface surf);
 
 	void resize(void);
+
+	virtual void ping(struct wl_shell_surface *shell_surface, uint32_t serial);
+
+private:
 
 	GHOST_SystemWayland  *m_system;
 	bool m_invalid_window;

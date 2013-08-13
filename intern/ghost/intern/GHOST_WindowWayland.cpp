@@ -68,6 +68,8 @@ GHOST_WindowWayland::GHOST_WindowWayland(GHOST_SystemWayland *system,
 	m_shell_surface.reset(
 		WL_CHK(wl_shell_get_shell_surface(shell, m_surface.get())));
 
+	wl::add_listener<wl::shell_surface_listener>(this, m_shell_surface.get());
+
 	m_window.reset(WL_CHK(wl_egl_window_create(m_surface.get(), width, height)));
 
 	m_egl_surface.reset(
@@ -330,4 +332,10 @@ GHOST_WindowWayland::resize(void)
 		m_height,
 		m_x,
 		m_y);
+}
+
+void
+GHOST_WindowWayland::ping(struct wl_shell_surface *shell_surface, uint32_t serial)
+{
+	wl_shell_surface_pong(shell_surface, serial);
 }
