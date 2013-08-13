@@ -40,6 +40,9 @@
 #include "GHOST_EventButton.h"
 #include "GHOST_EventWheel.h"
 
+#define ADD_LISTENER(object) \
+	wl::add_listener<wl::object##_listener>(this, m_##object.get())
+
 GHOST_SystemWayland::GHOST_SystemWayland()
 	: GHOST_System()
 	, m_display(wl_display_connect(NULL))
@@ -62,7 +65,7 @@ GHOST_SystemWayland::GHOST_SystemWayland()
 
 	m_registry.reset(WL_CHK(wl_display_get_registry(m_display.get())));
 
-	wl::add_listener<wl::registry_listener>(this, m_registry.get());
+	ADD_LISTENER(registry);
 
 	WL_CHK(wl_display_dispatch(m_display.get()));
 
@@ -313,7 +316,7 @@ GHOST_SystemWayland::global(
 	REGISTRY_BIND(shell);
 
 	if (REGISTRY_BIND(output))
-		wl::add_listener<wl::output_listener>(this, m_output.get());
+		ADD_LISTENER(output);
 
 #undef REGISTRY_BIND
 }
