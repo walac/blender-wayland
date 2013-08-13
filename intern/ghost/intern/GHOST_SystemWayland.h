@@ -53,6 +53,7 @@ class GHOST_WindowWayland;
 class GHOST_SystemWayland
 	: public GHOST_System
 	, public wl::registry_listener
+	, public wl::output_listener
 {
 public:
 
@@ -119,6 +120,13 @@ private:
 			const char *interface,
 			uint32_t version);
 
+	virtual void mode(
+		struct wl_output *output,
+		uint32_t flags,
+		int32_t width,
+		int32_t height,
+		int32_t refresh);
+
 private:
 
 	GHOST_TSuccess
@@ -139,7 +147,7 @@ private:
 	             );
 
 	template<typename T>
-	void registry_bind(
+	bool registry_bind(
 		T &object,
 		const char *name,
 		const char *myname,
@@ -154,14 +162,17 @@ private:
 	wl::unique_ptr<wl_registry> m_registry;
 	wl::unique_ptr<wl_compositor> m_compositor;
 	wl::unique_ptr<wl_shell> m_shell;
+	wl::unique_ptr<wl_output> m_output;
 	scoped_resource<EGLDisplay> m_egl_display;
 	EGLConfig m_conf;
 	boost::asio::io_service m_io_service;
 	boost::asio::posix::stream_descriptor m_display_fd;
 	boost::asio::deadline_timer m_dispatch_timer;
+	uint32_t m_width;
+	uint32_t m_height;
 };
 
-template<typename T> void
+template<typename T> bool
 GHOST_SystemWayland::registry_bind(
 	T &object,
 	const char *name,
@@ -171,13 +182,17 @@ GHOST_SystemWayland::registry_bind(
 {
 	typedef typename T::pointer pointer;
 
-	if (!std::strcmp(name, myname))
+	if (!std::strcmp(name, myname)) {
 		object.reset(
 			static_cast<pointer> (WL_CHK(wl_registry_bind(
 				m_registry.get(),
 				id,
 				interface,
 				1))));
+		return true;
+	}
+
+	return false;
 }
 
 

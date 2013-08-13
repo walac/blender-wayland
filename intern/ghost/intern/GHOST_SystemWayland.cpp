@@ -175,16 +175,16 @@ void
 GHOST_SystemWayland::getAllDisplayDimensions(GHOST_TUns32& width,
                                          GHOST_TUns32& height) const
 {
-	width = 600;
-	height = 400;
+	width = m_width;
+	height = m_height;
 }
 
 void
 GHOST_SystemWayland::getMainDisplayDimensions(GHOST_TUns32& width,
                                           GHOST_TUns32& height) const
 {
-	width = 1600;
-	height = 900;
+	width = m_width;
+	height = m_height;
 }
 
 GHOST_TUns8
@@ -302,17 +302,36 @@ GHOST_SystemWayland::global(
 	(void) version;
 
 #define REGISTRY_BIND(object) \
-	do { \
-		registry_bind( \
-			m_##object, \
-			interface, \
-			"wl_" #object, \
-			id, \
-			&wl_##object##_interface); \
-	} while (0)
+	registry_bind( \
+		m_##object, \
+		interface, \
+		"wl_" #object, \
+		id, \
+		&wl_##object##_interface)
 
 	REGISTRY_BIND(compositor);
 	REGISTRY_BIND(shell);
 
+	if (REGISTRY_BIND(output))
+		wl::add_listener<wl::output_listener>(this, m_output.get());
+
 #undef REGISTRY_BIND
 }
+
+void
+GHOST_SystemWayland::mode(
+	struct wl_output *output,
+	uint32_t flags,
+	int32_t width,
+	int32_t height,
+	int32_t refresh)
+{
+	(void) output;
+	(void) refresh;
+
+	if (flags & WL_OUTPUT_MODE_CURRENT) {
+		m_width = width;
+		m_height = height;
+	}
+}
+
