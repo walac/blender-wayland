@@ -35,7 +35,7 @@ class GHOST_SystemWayland;
 class GHOST_DisplayManagerWayland : public GHOST_DisplayManager
 {
 public:
-	GHOST_DisplayManagerWayland(void);
+	GHOST_DisplayManagerWayland(GHOST_SystemWayland *system);
 
 	GHOST_TSuccess
 	getNumDisplays(GHOST_TUns8& numDisplays) const;
@@ -58,6 +58,7 @@ public:
 	                         const GHOST_DisplaySetting& setting);
 
 private:
+	GHOST_SystemWayland *m_system;
 };
 
 #endif /* __GHOST_DISPLAYMANAGERWAYLAND_H__ */

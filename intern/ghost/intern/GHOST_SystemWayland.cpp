@@ -129,7 +129,7 @@ GHOST_SystemWayland::init() {
 	GHOST_TSuccess success = GHOST_System::init();
 
 	if (success) {
-		m_displayManager = new (std::nothrow) GHOST_DisplayManagerWayland();
+		m_displayManager = new (std::nothrow) GHOST_DisplayManagerWayland(this);
 
 		if (m_displayManager) {
 			return GHOST_kSuccess;

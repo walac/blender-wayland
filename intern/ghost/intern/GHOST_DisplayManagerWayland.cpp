@@ -34,8 +34,9 @@
 
 #include "GHOST_WindowManager.h"
 
-GHOST_DisplayManagerWayland::GHOST_DisplayManagerWayland()
+GHOST_DisplayManagerWayland::GHOST_DisplayManagerWayland(GHOST_SystemWayland *system)
 	: GHOST_DisplayManager()
+	, m_system(system)
 {
 }
 
@@ -64,10 +65,9 @@ GHOST_DisplayManagerWayland::getDisplaySetting(GHOST_TUns8 display,
 {
 	GHOST_ASSERT(display < 1, "Only single display systems are currently supported.\n");
 
-	(void) display;
 	(void) index;
-	(void) setting;
 
+	getCurrentDisplaySetting(display, setting);
 	return GHOST_kSuccess;
 }
 
@@ -77,6 +77,10 @@ GHOST_DisplayManagerWayland::getCurrentDisplaySetting(GHOST_TUns8 display,
 {
 	(void) display;
 	(void) setting;
+
+	m_system->getAllDisplayDimensions(setting.xPixels, setting.yPixels);
+	setting.bpp = 32;
+	setting.frequency = 60;
 
 	return GHOST_kSuccess;
 }
