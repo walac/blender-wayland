@@ -73,7 +73,8 @@ GHOST_SystemWayland::GHOST_SystemWayland()
 	EGL_CHK(eglBindAPI(EGL_OPENGL_API));
 
 	EGLint n;
-	EGL_CHK(eglChooseConfig(m_egl_display.get(), config_attribs, &m_conf, 1, &n));
+	EGLBoolean ret = EGL_CHK(eglChooseConfig(m_egl_display.get(), config_attribs, &m_conf, 1, &n));
+	assert(EGL_TRUE == ret && 1 == n);
 
 	m_display_fd.assign(wl_display_get_fd(m_display.get()));
 }
