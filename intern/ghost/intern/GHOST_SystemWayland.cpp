@@ -40,9 +40,6 @@
 #include "GHOST_EventButton.h"
 #include "GHOST_EventWheel.h"
 
-#define ADD_LISTENER(object) \
-	wl::add_listener<wl::object##_listener>(this, m_##object.get())
-
 GHOST_SystemWayland::GHOST_SystemWayland()
 	: GHOST_System()
 	, m_display(wl_display_connect(NULL))

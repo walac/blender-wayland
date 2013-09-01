@@ -48,6 +48,9 @@ extern "C" {
 #include <boost/asio/deadline_timer.hpp>
 #include <boost/asio/posix/stream_descriptor.hpp>
 
+#define ADD_LISTENER(object) \
+	wl::add_listener<wl::object##_listener>(this, m_##object.get())
+
 class GHOST_WindowWayland;
 
 class GHOST_SystemWayland
