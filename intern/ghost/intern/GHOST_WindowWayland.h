@@ -155,7 +155,15 @@ private:
 
 	void resize(void);
 
-	virtual void ping(struct wl_shell_surface *shell_surface, uint32_t serial);
+	virtual void ping(
+		struct wl_shell_surface *shell_surface,
+		uint32_t serial);
+
+	virtual void configure(
+		struct wl_shell_surface *shell_surface,
+		uint32_t edges,
+		int32_t width,
+		int32_t height);
 
 private:
 

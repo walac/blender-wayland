@@ -336,3 +336,17 @@ GHOST_WindowWayland::ping(struct wl_shell_surface *shell_surface, uint32_t seria
 {
 	wl_shell_surface_pong(shell_surface, serial);
 }
+
+void
+GHOST_WindowWayland::configure(
+	struct wl_shell_surface *shell_surface,
+	uint32_t edges,
+	int32_t width,
+	int32_t height)
+{
+	if (m_window.get())
+		wl_egl_window_resize(m_window.get(), width, height, 0, 0);
+
+	m_width = width;
+	m_height = height;
+}
