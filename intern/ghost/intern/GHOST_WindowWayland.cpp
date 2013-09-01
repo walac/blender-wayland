@@ -74,6 +74,9 @@ GHOST_WindowWayland::GHOST_WindowWayland(GHOST_SystemWayland *system,
 			m_window.get(), NULL)),
 		egl::object_deleter<EGLSurface>(egl_display, eglDestroySurface));
 
+
+	assert(m_egl_surface.get() != EGL_NO_SURFACE);
+
 	setTitle(title);
 	resize();
 }
