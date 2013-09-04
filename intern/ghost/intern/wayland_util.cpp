@@ -37,7 +37,7 @@ namespace {
 	std::string function_name(const char *expr)
 	{
 		const char *p = strchr(expr, '(');
-		return std::string(expr, p + (p ? 1 : strlen(expr)));
+		return std::string(expr, (p ? p : p + strlen(expr)));
 	}
 }
 
