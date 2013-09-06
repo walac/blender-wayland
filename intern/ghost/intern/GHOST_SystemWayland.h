@@ -44,9 +44,6 @@ extern "C" {
 }
 
 #include <cstring>
-#include <boost/asio/io_service.hpp>
-#include <boost/asio/deadline_timer.hpp>
-#include <boost/asio/posix/stream_descriptor.hpp>
 
 #define ADD_LISTENER(object) \
 	wl::add_listener<wl::object##_listener>(this, m_##object.get())
@@ -157,9 +154,6 @@ private:
 		uint32_t id,
 		const wl_interface *interface);
 
-	void dispatch_events(const boost::system::error_code &ec, bool &any_processed);
-	void dispatch_timeout(const boost::system::error_code &ec);
-
 private:
 	wl::unique_ptr<wl_display> m_display;
 	wl::unique_ptr<wl_registry> m_registry;
@@ -168,9 +162,6 @@ private:
 	wl::unique_ptr<wl_output> m_output;
 	scoped_resource<EGLDisplay> m_egl_display;
 	EGLConfig m_conf;
-	boost::asio::io_service m_io_service;
-	boost::asio::posix::stream_descriptor m_display_fd;
-	boost::asio::deadline_timer m_dispatch_timer;
 	uint32_t m_width;
 	uint32_t m_height;
 };

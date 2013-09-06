@@ -26,9 +26,7 @@
 
 #include <cassert>
 #include <memory>
-#include <boost/bind.hpp>
-#include <boost/asio/placeholders.hpp>
-#include <boost/date_time/posix_time/posix_time_duration.hpp>
+#include <poll.h>
 
 #include "GHOST_SystemWayland.h"
 #include "GHOST_WindowWayland.h"
@@ -44,8 +42,6 @@ GHOST_SystemWayland::GHOST_SystemWayland()
 	: GHOST_System()
 	, m_display(wl_display_connect(NULL))
 	, m_egl_display(eglTerminate)
-	, m_display_fd(m_io_service)
-	, m_dispatch_timer(m_io_service)
 {
 	static const EGLint config_attribs[] = {
 		EGL_SURFACE_TYPE, EGL_WINDOW_BIT,
@@ -75,13 +71,10 @@ GHOST_SystemWayland::GHOST_SystemWayland()
 	EGLint n;
 	EGLBoolean ret = EGL_CHK(eglChooseConfig(m_egl_display.get(), config_attribs, &m_conf, 1, &n));
 	assert(EGL_TRUE == ret && 1 == n);
-
-	m_display_fd.assign(wl_display_get_fd(m_display.get()));
 }
 
 GHOST_SystemWayland::~GHOST_SystemWayland()
 {
-	m_display_fd.release();
 	WL_CHK(wl_display_flush(m_display.get()));
 }
 
@@ -135,37 +128,6 @@ GHOST_SystemWayland::init() {
 	}
 
 	return GHOST_kFailure;
-}
-
-void
-GHOST_SystemWayland::dispatch_events(const boost::system::error_code &ec, bool &any_processed)
-{
-	m_dispatch_timer.cancel();
-
-	if (ec) {
-#ifdef GHOST_DEBUG
-		fprintf(stderr, "GHOST_SystemWayland::dispatch_events: %s\n",
-			ec.message().c_str());
-#endif // GHOST_DEBUG
-		return;
-	}
-
-	if (WL_CHK(wl_display_dispatch(m_display.get())) > 0)
-		any_processed = true;
-}
-
-void
-GHOST_SystemWayland::dispatch_timeout(const boost::system::error_code &ec)
-{
-	m_display_fd.cancel();
-
-#ifdef GHOST_DEBUG
-	if (ec)
-		fprintf(stderr, "GHOST_SystemWayland::dispatch_timeout: %s\n",
-			ec.message().c_str());
-#else
-	(void) ec;
-#endif // GHOST_DEBUG
 }
 
 /**
@@ -225,11 +187,12 @@ GHOST_SystemWayland::processEvents(bool waitForEvent)
 	// Get all the current events -- translate them into
 	// ghost events and call base class pushEvent() method.
 
-	using boost::posix_time::milliseconds;
-	using namespace boost::asio;
-
 	bool anyProcessed = false;
 	GHOST_TimerManager *timerMgr = getTimerManager();
+	struct pollfd fds;
+
+	fds.fd = wl_display_get_fd(m_display.get());
+	fds.events = POLLIN | POLLOUT;
 
 	do {
 		if (WL_CHK(wl_display_dispatch_pending(m_display.get())) <= 0 && waitForEvent) {
@@ -242,25 +205,27 @@ GHOST_SystemWayland::processEvents(bool waitForEvent)
 			} else if (cur_milliseconds < next) {
 				const GHOST_TUns64 wait_time = next - cur_milliseconds;
 
-				// with a null_buffer our callback will be called when
-				// there bytes available but no reading will happen
-				m_display_fd.async_read_some(
-					null_buffers(),
-					boost::bind(
-						&GHOST_SystemWayland::dispatch_events,
-						this,
-						placeholders::error(),
-						boost::ref(anyProcessed)));
+				fds.revents = 0;
+				int ret = poll(&fds, 1, wait_time);
 
-				// timeout
-				m_dispatch_timer.expires_from_now(milliseconds(wait_time));
-				m_dispatch_timer.async_wait(
-					boost::bind(
-						&GHOST_SystemWayland::dispatch_timeout,
-						this,
-						placeholders::error()));
+				if (ret < 0) {
+					perror("poll");
+					break;
+				} else if (ret) {
+					switch (fds.revents) {
+						case POLLIN:
+							if (WL_CHK(wl_display_dispatch(m_display.get())) > 0)
+								anyProcessed = true;
+							break;
 
-				m_io_service.run_one();
+						case POLLOUT:
+							WL_CHK(wl_display_dispatch(m_display.get()));
+							break;
+
+						default:
+							fprintf(stderr, "epoll error: %hd\n", fds.revents);
+					}
+				}
 			}
 		}
 
