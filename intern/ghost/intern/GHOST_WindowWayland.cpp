@@ -81,6 +81,12 @@ GHOST_WindowWayland::GHOST_WindowWayland(GHOST_SystemWayland *system,
 
 	setTitle(title);
 	resize();
+
+        /* now set up the rendering context. */
+        if (installDrawingContext(type) == GHOST_kSuccess) {
+                // m_valid_setup = true;
+                GHOST_PRINT("Created window\n");
+        }
 }
 
 GHOST_WindowWayland::~GHOST_WindowWayland()
