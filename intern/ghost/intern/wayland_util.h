@@ -23,11 +23,9 @@
 #ifndef WAYLAND_UTIL_H_
 #define WAYLAND_UTIL_H_
 
-#include <boost/interprocess/smart_ptr/unique_ptr.hpp>
 #include <cstring>
-#include <functional>
-#include <boost/function.hpp>
 #include <EGL/egl.h>
+#include <cassert>
 #include <wayland-client.h>
 
 #ifdef GHOST_DEBUG
@@ -80,35 +78,16 @@ set_user_data(T *object, U *data)
 template<typename T> inline void
 destroy(T *object)
 {
-	wl_proxy_destroy(reinterpret_cast<wl_proxy*> (object));
+        if (object)
+                wl_proxy_destroy(reinterpret_cast<wl_proxy*> (object));
 }
 
 inline void
 destroy(wl_display *display)
 {
-	wl_display_disconnect(display);
+        if (display)
+                wl_display_disconnect(display);
 }
-
-namespace detail {
-	// empty base optimization
-	template<typename T>
-	struct destroyer : std::unary_function<void, T*> {
-		void operator()(T *p)
-		{
-			destroy(p);
-		}
-	};
-}
-
-template<typename T>
-struct unique_ptr
-	: public boost::interprocess::unique_ptr<T, detail::destroyer<T> >
-{
-	typedef boost::interprocess::unique_ptr<T, detail::destroyer<T> > base_type;
-	using base_type::pointer;
-
-	unique_ptr(T *p = NULL) : base_type(p, detail::destroyer<T>()) { }
-};
 
 }
 
@@ -130,23 +109,6 @@ error_check(T *result, const char *expr, const char *srcfile, size_t linenumber)
 
 	return result;
 }
-
-// generic EGL objects deleter
-template<typename T>
-struct object_deleter
-	: public std::unary_function<void, T>
-{
-	template<typename D>
-	object_deleter(EGLDisplay disp, D d)
-		: disp(disp), deleter(d)
-	{ }
-
-	void operator()(T o)
-	{ EGL_CHK(deleter(disp, o)); }
-
-	EGLDisplay disp;
-	boost::function<EGLBoolean(EGLDisplay, T)> deleter;
-};
 
 }
 

@@ -34,7 +34,6 @@
 #include "GHOST_TimerManager.h"
 #include "GHOST_WindowWayland.h"
 #include "GHOST_Event.h"
-#include "scoped_resource.h"
 #include "wayland_util.h"
 #include "wayland_listeners.h"
 
@@ -46,7 +45,7 @@ extern "C" {
 #include <cstring>
 
 #define ADD_LISTENER(object) \
-	wl::add_listener<wl::object##_listener>(this, m_##object.get())
+	wl::add_listener<wl::object##_listener>(this, m_##object)
 
 class GHOST_WindowWayland;
 
@@ -98,16 +97,16 @@ public:
 	                         GHOST_TUns32& height) const;
 
 	wl_display *getDisplay()
-	{ return m_display.get(); }
+	{ return m_display; }
 
 	wl_compositor *getCompositor()
-	{ return m_compositor.get(); }
+	{ return m_compositor; }
 
 	wl_shell *getShell()
-	{ return m_shell.get(); }
+	{ return m_shell; }
 
 	EGLDisplay getEglDisplay()
-	{ return m_egl_display.get(); }
+	{ return m_egl_display; }
 
 	EGLConfig getEglConf() const
 	{ return m_conf; }
@@ -148,19 +147,19 @@ private:
 
 	template<typename T>
 	bool registry_bind(
-		T &object,
+		T *&object,
 		const char *name,
 		const char *myname,
 		uint32_t id,
 		const wl_interface *interface);
 
 private:
-	wl::unique_ptr<wl_display> m_display;
-	wl::unique_ptr<wl_registry> m_registry;
-	wl::unique_ptr<wl_compositor> m_compositor;
-	wl::unique_ptr<wl_shell> m_shell;
-	wl::unique_ptr<wl_output> m_output;
-	scoped_resource<EGLDisplay> m_egl_display;
+	wl_display *m_display;
+	wl_registry *m_registry;
+	wl_compositor *m_compositor;
+	wl_shell *m_shell;
+	wl_output *m_output;
+	EGLDisplay m_egl_display;
 	EGLConfig m_conf;
 	uint32_t m_width;
 	uint32_t m_height;
@@ -168,21 +167,19 @@ private:
 
 template<typename T> bool
 GHOST_SystemWayland::registry_bind(
-	T &object,
+	T *&object,
 	const char *name,
 	const char *myname,
 	uint32_t id,
 	const wl_interface *interface)
 {
-	typedef typename T::pointer pointer;
-
 	if (!std::strcmp(name, myname)) {
-		object.reset(
-			static_cast<pointer> (WL_CHK(wl_registry_bind(
-				m_registry.get(),
+		object = 
+                        static_cast<T*> (WL_CHK(wl_registry_bind(
+				m_registry,
 				id,
 				interface,
-				1))));
+				1)));
 		return true;
 	}
 

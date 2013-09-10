@@ -41,7 +41,10 @@
 GHOST_SystemWayland::GHOST_SystemWayland()
 	: GHOST_System()
 	, m_display(wl_display_connect(NULL))
-	, m_egl_display(eglTerminate)
+        , m_registry(NULL)
+        , m_compositor(NULL)
+        , m_shell(NULL)
+        , m_output(NULL)
 {
 	static const EGLint config_attribs[] = {
 		EGL_SURFACE_TYPE, EGL_WINDOW_BIT,
@@ -56,26 +59,35 @@ GHOST_SystemWayland::GHOST_SystemWayland()
 
 	EGLint major, minor;
 
-	m_registry.reset(WL_CHK(wl_display_get_registry(m_display.get())));
+	m_registry = WL_CHK(wl_display_get_registry(m_display));
 
 	ADD_LISTENER(registry);
 
-	WL_CHK(wl_display_dispatch(m_display.get()));
+	WL_CHK(wl_display_dispatch(m_display));
 
-	m_egl_display.reset(EGL_CHK(eglGetDisplay(m_display.get())));
+	m_egl_display = EGL_CHK(eglGetDisplay(m_display));
 
-	EGL_CHK(eglInitialize(m_egl_display.get(), &major, &minor));
+	EGL_CHK(eglInitialize(m_egl_display, &major, &minor));
 
 	EGL_CHK(eglBindAPI(EGL_OPENGL_API));
 
 	EGLint n;
-	EGLBoolean ret = EGL_CHK(eglChooseConfig(m_egl_display.get(), config_attribs, &m_conf, 1, &n));
+	EGLBoolean ret = EGL_CHK(eglChooseConfig(m_egl_display, config_attribs, &m_conf, 1, &n));
 	assert(EGL_TRUE == ret && 1 == n);
 }
 
 GHOST_SystemWayland::~GHOST_SystemWayland()
 {
-	WL_CHK(wl_display_flush(m_display.get()));
+        if (EGL_NO_DISPLAY != m_egl_display)
+                EGL_CHK(eglTerminate(m_egl_display));
+
+        wl::destroy(m_output);
+        wl::destroy(m_shell);
+        wl::destroy(m_compositor);
+        wl::destroy(m_registry);
+
+	WL_CHK(wl_display_flush(m_display));
+        wl::destroy(m_display);
 }
 
 GHOST_IWindow *
@@ -191,16 +203,16 @@ GHOST_SystemWayland::processEvents(bool waitForEvent)
 	GHOST_TimerManager *timerMgr = getTimerManager();
 	struct pollfd fds;
 
-	fds.fd = wl_display_get_fd(m_display.get());
+	fds.fd = wl_display_get_fd(m_display);
 	fds.events = POLLIN | POLLOUT;
 
 	do {
-		if (WL_CHK(wl_display_dispatch_pending(m_display.get())) <= 0 && waitForEvent) {
+		if (WL_CHK(wl_display_dispatch_pending(m_display)) <= 0 && waitForEvent) {
 			const GHOST_TUns64 next = timerMgr->nextFireTime();
 			const GHOST_TUns64 cur_milliseconds = getMilliSeconds();
 
 			if (GHOST_kFireTimeNever == next) {
-				if (WL_CHK(wl_display_dispatch(m_display.get())) > 0)
+				if (WL_CHK(wl_display_dispatch(m_display)) > 0)
 					anyProcessed = true;
 			} else if (cur_milliseconds < next) {
 				const GHOST_TUns64 wait_time = next - cur_milliseconds;
@@ -214,12 +226,12 @@ GHOST_SystemWayland::processEvents(bool waitForEvent)
 				} else if (ret) {
 					switch (fds.revents) {
 						case POLLIN:
-							if (WL_CHK(wl_display_dispatch(m_display.get())) > 0)
+							if (WL_CHK(wl_display_dispatch(m_display)) > 0)
 								anyProcessed = true;
 							break;
 
 						case POLLOUT:
-							WL_CHK(wl_display_dispatch(m_display.get()));
+							WL_CHK(wl_display_dispatch(m_display));
 							break;
 
 						default:

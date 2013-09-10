@@ -32,7 +32,6 @@
 #include "GHOST_SystemWayland.h"
 #include "wayland_util.h"
 #include "wayland_listeners.h"
-#include "scoped_resource.h"
 
 extern "C" {
 #include <wayland-client.h>
@@ -170,12 +169,11 @@ private:
 	GHOST_SystemWayland  *m_system;
 	bool m_invalid_window;
 
-	wl::unique_ptr<wl_surface> m_surface;
-	wl::unique_ptr<wl_shell_surface> m_shell_surface;
-	wl::unique_ptr<wl_egl_window> m_window;
-	scoped_resource<EGLSurface> m_egl_surface;
-	scoped_resource<EGLContext> m_egl_context;
-	EGLConfig m_conf;
+	wl_surface *m_surface;
+	wl_shell_surface *m_shell_surface;
+	wl_egl_window *m_window;
+	EGLSurface m_egl_surface;
+	EGLContext m_egl_context;
 
 	std::string m_title;
 	int m_x;
