@@ -54,6 +54,17 @@ macro(data_to_c
 endmacro()
 
 # -----------------------------------------------------------------------------
+# Options
+
+if (UNIX AND NOT APPLE)
+	option(WITH_EGL "Enable EGL windowing system" OFF)
+	mark_as_advanced(WITH_EGL)
+
+	option(WITH_GHOST_WAYLAND "Enable building blender against Wayland for windowing" OFF)
+	mark_as_advanced(WITH_GHOST_WAYLAND)
+endif()
+
+# -----------------------------------------------------------------------------
 # Defines
 
 # set the endian define
@@ -166,7 +177,63 @@ if(CMAKE_COMPILER_IS_GNUCC)
 endif()
 
 if(UNIX AND NOT APPLE)
-	find_package(X11 REQUIRED)
+	if(WITH_GHOST_WAYLAND)
+		set(WITH_EGL ON)
+
+		find_package(Wayland)
+
+		mark_as_advanced(
+			WAYLAND_CLIENT_LIBRARIES
+			WAYLAND_CLIENT_INCLUDE_DIR
+			WAYLAND_EGL_INCLUDE_DIR
+			WAYLAND_EGL_LIBRARIES
+		)
+
+		if(NOT WAYLAND_CLIENT_FOUND OR NOT WAYLAND_EGL_FOUND)
+				if(NOT WAYLAND_CLIENT_FOUND)
+					message(FATAL_ERROR "Wayland client libraries not found.")
+				endif()
+
+				if(NOT WAYLAND_EGL_FOUND)
+					message(FATAL_ERROR "Wayland EGL libraries not found.")
+				endif()
+		endif()
+
+		add_definitions("-DWITH_GHOST_WAYLAND -DWL_EGL_PLATFORM")
+
+		set(PLATFORM_LINKLIBS
+			${PLATFORM_LINKLIBS}
+			${WAYLAND_CLIENT_LIBRARIES}
+			${WAYLAND_EGL_LIBRARIES}
+			${OPENGLES_EGL_LIBRARY}
+		)
+	else()
+		find_package(X11 REQUIRED)
+
+		set(PLATFORM_LINKLIBS
+			${PLATFORM_LINKLIBS}
+			${X11_X11_LIB}
+			${X11_Xinput_LIB}
+		)
+	endif()
+
+	if(WITH_EGL)
+		find_package(OpenGLES)
+
+		mark_as_advanced(
+			OPENGLES_EGL_LIBRARY
+			OPENGLES_EGL_INCLUDE_DIR
+		)
+
+		if(NOT OPENGLES_EGL_FOUND)
+			if(NOT OPENGL_EGL_FOUND)
+				message(FATAL_ERROR "EGL libraries not found.")
+			endif()
+		endif()
+
+		set(PLATFORM_LINKLIBS ${PLATFORM_LINKLIBS} ${OPENGLES_EGL_LIBRARY})
+	endif()
+
 	find_package(GLEW)
 
 	if(NOT GLEW_FOUND)
@@ -174,8 +241,7 @@ if(UNIX AND NOT APPLE)
 	endif()
 
 	set(PLATFORM_LINKLIBS
-		${X11_X11_LIB}
-		${X11_Xinput_LIB}
+		${PLATFORM_LINKLIBS}
 		${GLEW_LIBRARY}
 		-lpthread
 	)
