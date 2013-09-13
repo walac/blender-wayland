@@ -239,6 +239,8 @@ GHOST_SystemWayland::processEvents(bool waitForEvent)
 					}
 				}
 			}
+		} else {
+			anyProcessed = true;
 		}
 
 		if (timerMgr->fireTimers(getMilliSeconds()))
