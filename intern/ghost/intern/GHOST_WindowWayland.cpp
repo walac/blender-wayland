@@ -28,6 +28,17 @@
 #include <GL/glew.h>
 #include <cassert>
 
+WindowCallbackBase::WindowCallbackBase(GHOST_WindowWayland *window)
+	: m_window(window)
+	, m_callback(NULL)
+{
+}
+
+WindowCallbackBase::~WindowCallbackBase()
+{
+	wl::destroy(m_callback);
+}
+
 GHOST_WindowWayland::GHOST_WindowWayland(GHOST_SystemWayland *system,
                                  const STR_String& title,
                                  GHOST_TInt32 left,
@@ -53,6 +64,8 @@ GHOST_WindowWayland::GHOST_WindowWayland(GHOST_SystemWayland *system,
 	, m_width(width)
 	, m_height(height)
 	, m_state(GHOST_kWindowStateNormal)
+	, m_redraw(this)
+	, m_sync(this)
 {
 	wl_display *display = m_system->getDisplay();
 	wl_compositor *compositor = m_system->getCompositor();
@@ -65,7 +78,7 @@ GHOST_WindowWayland::GHOST_WindowWayland(GHOST_SystemWayland *system,
 
 	m_surface = WL_CHK(wl_compositor_create_surface(compositor));
 
-	m_shell_surface = 
+	m_shell_surface =
 		WL_CHK(wl_shell_get_shell_surface(shell, m_surface));
 
 	ADD_LISTENER(shell_surface);
@@ -80,13 +93,16 @@ GHOST_WindowWayland::GHOST_WindowWayland(GHOST_SystemWayland *system,
 	assert(m_egl_surface != EGL_NO_SURFACE);
 
 	setTitle(title);
-	resize();
 
         /* now set up the rendering context. */
         if (installDrawingContext(type) == GHOST_kSuccess) {
                 // m_valid_setup = true;
                 GHOST_PRINT("Created window\n");
         }
+
+	EGL_CHK(wl_shell_surface_set_toplevel(m_shell_surface));
+	resize();
+	m_sync.initialize();
 }
 
 GHOST_WindowWayland::~GHOST_WindowWayland()
@@ -382,3 +398,56 @@ GHOST_WindowWayland::configure(
 	m_width = width;
 	m_height = height;
 }
+
+// redraw
+void
+GHOST_WindowWayland::WindowDrawHandler::done(
+	struct wl_callback *callback,
+	uint32_t)
+{
+	assert(callback == m_callback);
+	GHOST_SystemWayland *system = m_window->m_system;
+
+	system->pushEvent(
+		new GHOST_Event(
+			system->getMilliSeconds(),
+			GHOST_kEventWindowUpdate,
+			m_window));
+
+	wl::destroy(m_callback);
+	initialize();
+}
+
+void
+GHOST_WindowWayland::WindowDrawHandler::init()
+{
+	m_callback = WL_CHK(wl_surface_frame(m_window->m_surface));
+	ADD_LISTENER(callback);
+}
+
+void
+GHOST_WindowWayland::DisplaySyncHandler::done(
+	struct wl_callback *callback,
+	uint32_t)
+{
+	assert(callback == m_callback);
+	GHOST_SystemWayland *system = m_window->m_system;
+
+	system->pushEvent(
+		new GHOST_Event(
+			system->getMilliSeconds(),
+			GHOST_kEventWindowUpdate,
+			m_window));
+
+	wl::destroy(m_callback);
+	m_callback = NULL;
+	m_window->m_redraw.initialize();
+}
+
+void
+GHOST_WindowWayland::DisplaySyncHandler::init()
+{
+	m_callback = WL_CHK(wl_display_sync(m_window->m_system->getDisplay()));
+	ADD_LISTENER(callback);
+}
+

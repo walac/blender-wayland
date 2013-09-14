@@ -43,10 +43,28 @@ extern "C" {
 
 class STR_String;
 class GHOST_SystemWayland;
+class GHOST_WindowWayland;
+
+class WindowCallbackBase : public wl::callback_listener {
+public:
+	WindowCallbackBase(GHOST_WindowWayland *window);
+	virtual ~WindowCallbackBase();
+
+	void initialize()
+	{ init(); }
+
+protected:
+	GHOST_WindowWayland *m_window;
+	wl_callback *m_callback;
+
+private:
+	virtual void init() {}
+};
 
 class GHOST_WindowWayland
 	: public GHOST_Window
 	, public wl::shell_surface_listener
+	, public wl::callback_listener
 {
 public:
 
@@ -150,6 +168,30 @@ protected:
 
 private:
 
+	class WindowDrawHandler : public WindowCallbackBase {
+	public:
+		WindowDrawHandler(GHOST_WindowWayland *window)
+			: WindowCallbackBase(window)
+		{ }
+
+	private:
+		void done(struct wl_callback *callback, uint32_t serial);
+		void init();
+	};
+
+	class DisplaySyncHandler : public WindowCallbackBase {
+	public:
+		DisplaySyncHandler(GHOST_WindowWayland *window)
+			: WindowCallbackBase(window)
+		{ }
+
+	private:
+		void done(struct wl_callback *callback, uint32_t serial);
+		void init();
+	};
+
+private:
+
 	void context_make_current(EGLSurface surf);
 
 	void resize(void);
@@ -182,6 +224,8 @@ private:
 	int m_height;
 
 	GHOST_TWindowState m_state;
+	WindowDrawHandler m_redraw;
+	DisplaySyncHandler m_sync;
 };
 
 #endif // __GHOST_WINDOWWAYLAND_H__
