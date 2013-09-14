@@ -196,26 +196,25 @@ GHOST_SystemWayland::setCursorPosition(GHOST_TInt32 x,
 bool
 GHOST_SystemWayland::processEvents(bool waitForEvent)
 {
-	// Get all the current events -- translate them into
-	// ghost events and call base class pushEvent() method.
-
 	bool anyProcessed = false;
 	GHOST_TimerManager *timerMgr = getTimerManager();
 	struct pollfd fds;
 
 	fds.fd = wl_display_get_fd(m_display);
-	fds.events = POLLIN | POLLOUT;
+	fds.events = POLLIN;
 
 	do {
-		if (WL_CHK(wl_display_dispatch_pending(m_display)) <= 0 && waitForEvent) {
+		if (WL_CHK(wl_display_dispatch_pending(m_display)) <= 0) {
+			WL_CHK(wl_display_flush(m_display));
+
 			const GHOST_TUns64 next = timerMgr->nextFireTime();
 			const GHOST_TUns64 cur_milliseconds = getMilliSeconds();
 
-			if (GHOST_kFireTimeNever == next) {
+			if (GHOST_kFireTimeNever == next && waitForEvent) {
 				if (WL_CHK(wl_display_dispatch(m_display)) > 0)
 					anyProcessed = true;
-			} else if (cur_milliseconds < next) {
-				const GHOST_TUns64 wait_time = next - cur_milliseconds;
+			} else if (cur_milliseconds <= next) {
+				const GHOST_TUns64 wait_time = waitForEvent ? next - cur_milliseconds : 0;
 
 				fds.revents = 0;
 				int ret = poll(&fds, 1, wait_time);
@@ -231,7 +230,7 @@ GHOST_SystemWayland::processEvents(bool waitForEvent)
 							break;
 
 						case POLLOUT:
-							WL_CHK(wl_display_dispatch(m_display));
+							WL_CHK(wl_display_flush(m_display));
 							break;
 
 						default:
