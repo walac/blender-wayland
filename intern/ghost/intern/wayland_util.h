@@ -63,8 +63,8 @@ add_listener(D *pthis, Proxy *object)
 	wl_proxy *proxy = reinterpret_cast<wl_proxy *> (object);
 	B *b = dynamic_cast<B*> (pthis);
 	assert(b);
-	wl_proxy_add_listener(proxy,
-		*reinterpret_cast<void(***)(void)> (b), b);
+	WL_CHK(wl_proxy_add_listener(proxy,
+		*reinterpret_cast<void(***)(void)> (b), b));
 }
 
 template<typename T, typename U> inline void
