@@ -41,10 +41,10 @@
 GHOST_SystemWayland::GHOST_SystemWayland()
 	: GHOST_System()
 	, m_display(wl_display_connect(NULL))
-        , m_registry(NULL)
-        , m_compositor(NULL)
-        , m_shell(NULL)
-        , m_output(NULL)
+	, m_registry(NULL)
+	, m_compositor(NULL)
+	, m_shell(NULL)
+	, m_output(NULL)
 {
 	static const EGLint config_attribs[] = {
 		EGL_SURFACE_TYPE, EGL_WINDOW_BIT,
@@ -78,37 +78,39 @@ GHOST_SystemWayland::GHOST_SystemWayland()
 
 GHOST_SystemWayland::~GHOST_SystemWayland()
 {
-        if (EGL_NO_DISPLAY != m_egl_display)
-                EGL_CHK(eglTerminate(m_egl_display));
+	if (EGL_NO_DISPLAY != m_egl_display)
+		EGL_CHK(eglTerminate(m_egl_display));
 
-        wl::destroy(m_output);
-        wl::destroy(m_shell);
-        wl::destroy(m_compositor);
-        wl::destroy(m_registry);
+	wl::destroy(m_output);
+	wl::destroy(m_shell);
+	wl::destroy(m_compositor);
+	wl::destroy(m_registry);
 
 	WL_CHK(wl_display_flush(m_display));
-        wl::destroy(m_display);
+	wl::destroy(m_display);
 }
 
 GHOST_IWindow *
-GHOST_SystemWayland::createWindow(const STR_String& title,
-                              GHOST_TInt32 left,
-                              GHOST_TInt32 top,
-                              GHOST_TUns32 width,
-                              GHOST_TUns32 height,
-                              GHOST_TWindowState state,
-                              GHOST_TDrawingContextType type,
-                              const bool stereoVisual,
-                              const bool exclusive,
-                              const GHOST_TUns16 numOfAASamples,
-                              const GHOST_TEmbedderWindowID parentWindow
-                              )
+GHOST_SystemWayland::createWindow(
+        const STR_String& title,
+        GHOST_TInt32 left,
+        GHOST_TInt32 top,
+        GHOST_TUns32 width,
+        GHOST_TUns32 height,
+        GHOST_TWindowState state,
+        GHOST_TDrawingContextType type,
+        const bool stereoVisual,
+        const bool exclusive,
+        const GHOST_TUns16 numOfAASamples,
+        const GHOST_TEmbedderWindowID parentWindow
+        )
 {
-	std::auto_ptr<GHOST_WindowWayland> window(new (std::nothrow) GHOST_WindowWayland(this, title,
-				left, top, width, height,
-				state, parentWindow, type,
-				stereoVisual, exclusive,
-				numOfAASamples));
+	std::auto_ptr<GHOST_WindowWayland> window(new (std::nothrow) GHOST_WindowWayland(
+	        this, title,
+	        left, top, width, height,
+	        state, parentWindow, type,
+	        stereoVisual, exclusive,
+	        numOfAASamples));
 
 	if (!window.get())
 		return NULL;
@@ -120,7 +122,8 @@ GHOST_SystemWayland::createWindow(const STR_String& title,
 	if (window->getValid()) {
 		m_windowManager->addWindow(window.get());
 		pushEvent(new GHOST_Event(getMilliSeconds(), GHOST_kEventWindowSize, window.get()));
-	} else {
+	}
+	else {
 		return NULL;
 	}
 
@@ -128,7 +131,8 @@ GHOST_SystemWayland::createWindow(const STR_String& title,
 }
 
 GHOST_TSuccess
-GHOST_SystemWayland::init() {
+GHOST_SystemWayland::init()
+{
 	GHOST_TSuccess success = GHOST_System::init();
 
 	if (success) {
@@ -148,7 +152,7 @@ GHOST_SystemWayland::init() {
  */
 void
 GHOST_SystemWayland::getAllDisplayDimensions(GHOST_TUns32& width,
-                                         GHOST_TUns32& height) const
+                                             GHOST_TUns32& height) const
 {
 	width = m_width;
 	height = m_height;
@@ -156,7 +160,7 @@ GHOST_SystemWayland::getAllDisplayDimensions(GHOST_TUns32& width,
 
 void
 GHOST_SystemWayland::getMainDisplayDimensions(GHOST_TUns32& width,
-                                          GHOST_TUns32& height) const
+                                              GHOST_TUns32& height) const
 {
 	width = m_width;
 	height = m_height;
@@ -177,7 +181,7 @@ GHOST_SystemWayland::getModifierKeys(GHOST_ModifierKeys& keys) const
 
 GHOST_TSuccess
 GHOST_SystemWayland::getCursorPosition(GHOST_TInt32& x,
-                                   GHOST_TInt32& y) const
+                                       GHOST_TInt32& y) const
 {
 	x = 0;
 	y = 0;
@@ -186,7 +190,7 @@ GHOST_SystemWayland::getCursorPosition(GHOST_TInt32& x,
 
 GHOST_TSuccess
 GHOST_SystemWayland::setCursorPosition(GHOST_TInt32 x,
-                                   GHOST_TInt32 y)
+                                       GHOST_TInt32 y)
 {
 	(void) x;
 	(void) y;
@@ -213,7 +217,8 @@ GHOST_SystemWayland::processEvents(bool waitForEvent)
 			if (GHOST_kFireTimeNever == next && waitForEvent) {
 				if (WL_CHK(wl_display_dispatch(m_display)) > 0)
 					anyProcessed = true;
-			} else if (cur_milliseconds <= next) {
+			}
+			else if (cur_milliseconds <= next) {
 				const GHOST_TUns64 wait_time = waitForEvent ? next - cur_milliseconds : 0;
 
 				fds.revents = 0;
@@ -222,7 +227,8 @@ GHOST_SystemWayland::processEvents(bool waitForEvent)
 				if (ret < 0) {
 					perror("poll");
 					break;
-				} else if (ret) {
+				}
+				else if (ret) {
 					switch (fds.revents) {
 						case POLLIN:
 							if (WL_CHK(wl_display_dispatch(m_display)) > 0)
@@ -238,7 +244,8 @@ GHOST_SystemWayland::processEvents(bool waitForEvent)
 					}
 				}
 			}
-		} else {
+		}
+		else {
 			anyProcessed = true;
 		}
 
@@ -271,10 +278,10 @@ GHOST_SystemWayland::putClipboard(GHOST_TInt8 *buffer, bool selection) const
 
 void
 GHOST_SystemWayland::global(
-	struct wl_registry *registry,
-	uint32_t id,
-	const char *interface,
-	uint32_t version)
+        struct wl_registry *registry,
+        uint32_t id,
+        const char *interface,
+        uint32_t version)
 {
 	using std::strcmp;
 
@@ -299,11 +306,11 @@ GHOST_SystemWayland::global(
 
 void
 GHOST_SystemWayland::mode(
-	struct wl_output *output,
-	uint32_t flags,
-	int32_t width,
-	int32_t height,
-	int32_t refresh)
+        struct wl_output *output,
+        uint32_t flags,
+        int32_t width,
+        int32_t height,
+        int32_t refresh)
 {
 	(void) output;
 	(void) refresh;
@@ -313,4 +320,3 @@ GHOST_SystemWayland::mode(
 		m_height = height;
 	}
 }
-

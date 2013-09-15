@@ -174,12 +174,11 @@ GHOST_SystemWayland::registry_bind(
 	const wl_interface *interface)
 {
 	if (!std::strcmp(name, myname)) {
-		object = 
-                        static_cast<T*> (WL_CHK(wl_registry_bind(
-				m_registry,
-				id,
-				interface,
-				1)));
+		object = static_cast<T*> (WL_CHK(wl_registry_bind(
+		        m_registry,
+		        id,
+		        interface,
+		        1)));
 		return true;
 	}
 

@@ -54,11 +54,11 @@ GHOST_WindowWayland::GHOST_WindowWayland(GHOST_SystemWayland *system,
                                  )
 	: GHOST_Window(width, height, state, type, stereoVisual, exclusive, numOfAASamples)
 	, m_system(system)
-        , m_surface(NULL)
-        , m_shell_surface(NULL)
-        , m_window(NULL)
-        , m_egl_surface(EGL_NO_SURFACE)
-        , m_egl_context(EGL_NO_CONTEXT)
+	, m_surface(NULL)
+	, m_shell_surface(NULL)
+	, m_window(NULL)
+	, m_egl_surface(EGL_NO_SURFACE)
+	, m_egl_context(EGL_NO_CONTEXT)
 	, m_x(left)
 	, m_y(top)
 	, m_width(width)
@@ -94,11 +94,11 @@ GHOST_WindowWayland::GHOST_WindowWayland(GHOST_SystemWayland *system,
 
 	setTitle(title);
 
-        /* now set up the rendering context. */
-        if (installDrawingContext(type) == GHOST_kSuccess) {
-                // m_valid_setup = true;
-                GHOST_PRINT("Created window\n");
-        }
+	/* now set up the rendering context. */
+	if (installDrawingContext(type) == GHOST_kSuccess) {
+		// m_valid_setup = true;
+		GHOST_PRINT("Created window\n");
+	}
 
 	EGL_CHK(wl_shell_surface_set_toplevel(m_shell_surface));
 	resize();
@@ -107,21 +107,21 @@ GHOST_WindowWayland::GHOST_WindowWayland(GHOST_SystemWayland *system,
 
 GHOST_WindowWayland::~GHOST_WindowWayland()
 {
-        EGLDisplay display = m_system->getEglDisplay();
+	EGLDisplay display = m_system->getEglDisplay();
 
 	if (m_egl_context != EGL_NO_CONTEXT) {
 		context_make_current(EGL_NO_SURFACE);
-                EGL_CHK(eglDestroyContext(display, m_egl_context));
-        }
+		EGL_CHK(eglDestroyContext(display, m_egl_context));
+	}
 
-        if (m_egl_surface != EGL_NO_SURFACE)
-                EGL_CHK(eglDestroySurface(display, m_egl_surface));
+	if (m_egl_surface != EGL_NO_SURFACE)
+		EGL_CHK(eglDestroySurface(display, m_egl_surface));
 
-        if (m_window)
-                wl_egl_window_destroy(m_window);
+	if (m_window)
+		wl_egl_window_destroy(m_window);
 
-        wl::destroy(m_shell_surface);
-        wl::destroy(m_surface);
+	wl::destroy(m_shell_surface);
+	wl::destroy(m_surface);
 }
 
 GHOST_TSuccess
@@ -133,16 +133,16 @@ GHOST_WindowWayland::installDrawingContext(GHOST_TDrawingContextType type)
 		case GHOST_kDrawingContextTypeOpenGL: {
 			EGLDisplay egl_display = m_system->getEglDisplay();
 
-                        if (m_egl_context != EGL_NO_CONTEXT) {
-                                context_make_current(EGL_NO_SURFACE);
-                                EGL_CHK(eglDestroyContext(egl_display, m_egl_context));
-                        }
+			if (m_egl_context != EGL_NO_CONTEXT) {
+				context_make_current(EGL_NO_SURFACE);
+				EGL_CHK(eglDestroyContext(egl_display, m_egl_context));
+			}
 
 			m_egl_context = EGL_CHK(eglCreateContext(
-                                                        egl_display,
-                                                        m_system->getEglConf(),
-                                                        EGL_NO_CONTEXT,
-                                                        NULL));
+			        egl_display,
+			        m_system->getEglConf(),
+			        EGL_NO_CONTEXT,
+			        NULL));
 
 			if (EGL_NO_CONTEXT == m_egl_context)
 				return GHOST_kFailure;
@@ -176,8 +176,8 @@ GHOST_WindowWayland::swapBuffers()
 {
 	if (getDrawingContextType() == GHOST_kDrawingContextTypeOpenGL) {
 		EGL_CHK(eglSwapBuffers(
-			m_system->getEglDisplay(),
-			m_egl_surface));
+		            m_system->getEglDisplay(),
+		            m_egl_surface));
 		return GHOST_kSuccess;
 	}
 	else {
@@ -362,21 +362,21 @@ GHOST_WindowWayland::context_make_current(EGLSurface surf)
 	assert(m_egl_context != EGL_NO_CONTEXT);
 
 	EGL_CHK(eglMakeCurrent(
-		m_system->getEglDisplay(),
-		surf,
-		surf,
-		m_egl_context));
+	        m_system->getEglDisplay(),
+	        surf,
+	        surf,
+	        m_egl_context));
 }
 
 void
 GHOST_WindowWayland::resize(void)
 {
 	wl_egl_window_resize(
-		m_window,
-		m_width,
-		m_height,
-		m_x,
-		m_y);
+	        m_window,
+	        m_width,
+	        m_height,
+	        m_x,
+	        m_y);
 }
 
 void
@@ -387,10 +387,10 @@ GHOST_WindowWayland::ping(struct wl_shell_surface *shell_surface, uint32_t seria
 
 void
 GHOST_WindowWayland::configure(
-	struct wl_shell_surface *shell_surface,
-	uint32_t edges,
-	int32_t width,
-	int32_t height)
+        struct wl_shell_surface *shell_surface,
+        uint32_t edges,
+        int32_t width,
+        int32_t height)
 {
 	if (m_window)
 		wl_egl_window_resize(m_window, width, height, 0, 0);
@@ -409,10 +409,10 @@ GHOST_WindowWayland::WindowDrawHandler::done(
 	GHOST_SystemWayland *system = m_window->m_system;
 
 	system->pushEvent(
-		new GHOST_Event(
-			system->getMilliSeconds(),
-			GHOST_kEventWindowUpdate,
-			m_window));
+	        new GHOST_Event(
+	            system->getMilliSeconds(),
+	            GHOST_kEventWindowUpdate,
+	            m_window));
 
 	wl::destroy(m_callback);
 	initialize();
@@ -427,17 +427,17 @@ GHOST_WindowWayland::WindowDrawHandler::init()
 
 void
 GHOST_WindowWayland::DisplaySyncHandler::done(
-	struct wl_callback *callback,
-	uint32_t)
+        struct wl_callback *callback,
+        uint32_t)
 {
 	assert(callback == m_callback);
 	GHOST_SystemWayland *system = m_window->m_system;
 
 	system->pushEvent(
-		new GHOST_Event(
-			system->getMilliSeconds(),
-			GHOST_kEventWindowUpdate,
-			m_window));
+	        new GHOST_Event(
+	            system->getMilliSeconds(),
+	            GHOST_kEventWindowUpdate,
+	            m_window));
 
 	wl::destroy(m_callback);
 	m_callback = NULL;
