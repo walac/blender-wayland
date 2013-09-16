@@ -64,7 +64,6 @@ private:
 class GHOST_WindowWayland
 	: public GHOST_Window
 	, public wl::shell_surface_listener
-	, public wl::callback_listener
 {
 public:
 
