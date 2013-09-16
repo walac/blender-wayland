@@ -100,7 +100,7 @@ GHOST_WindowWayland::GHOST_WindowWayland(GHOST_SystemWayland *system,
 		GHOST_PRINT("Created window\n");
 	}
 
-	EGL_CHK(wl_shell_surface_set_toplevel(m_shell_surface));
+	wl_shell_surface_set_toplevel(m_shell_surface);
 	resize();
 	m_sync.initialize();
 }
