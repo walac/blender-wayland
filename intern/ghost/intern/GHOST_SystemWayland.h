@@ -53,6 +53,9 @@ class GHOST_SystemWayland
 	: public GHOST_System
 	, public wl::registry_listener
 	, public wl::output_listener
+	, public wl::seat_listener
+	, public wl::keyboard_listener
+	, public wl::pointer_listener
 {
 public:
 
@@ -126,6 +129,9 @@ private:
 		int32_t height,
 		int32_t refresh);
 
+	virtual void capabilities(
+		 struct wl_seat *seat,
+		 uint32_t capabilities);
 private:
 
 	GHOST_TSuccess
@@ -159,6 +165,9 @@ private:
 	wl_compositor *m_compositor;
 	wl_shell *m_shell;
 	wl_output *m_output;
+	wl_seat *m_seat;
+	wl_keyboard *m_keyboard;
+	wl_pointer *m_pointer;
 	EGLDisplay m_egl_display;
 	EGLConfig m_conf;
 	uint32_t m_width;

@@ -45,6 +45,9 @@ GHOST_SystemWayland::GHOST_SystemWayland()
 	, m_compositor(NULL)
 	, m_shell(NULL)
 	, m_output(NULL)
+	, m_seat(NULL)
+	, m_keyboard(NULL)
+	, m_pointer(NULL)
 {
 	static const EGLint config_attribs[] = {
 		EGL_SURFACE_TYPE, EGL_WINDOW_BIT,
@@ -81,9 +84,12 @@ GHOST_SystemWayland::~GHOST_SystemWayland()
 	if (EGL_NO_DISPLAY != m_egl_display)
 		EGL_CHK(eglTerminate(m_egl_display));
 
+	wl::destroy(m_keyboard);
+	wl::destroy(m_pointer);
 	wl::destroy(m_output);
 	wl::destroy(m_shell);
 	wl::destroy(m_compositor);
+	wl::destroy(m_seat);
 	wl::destroy(m_registry);
 
 	WL_CHK(wl_display_flush(m_display));
@@ -301,6 +307,9 @@ GHOST_SystemWayland::global(
 	if (REGISTRY_BIND(output))
 		ADD_LISTENER(output);
 
+	if (REGISTRY_BIND(seat))
+		ADD_LISTENER(seat);
+
 #undef REGISTRY_BIND
 }
 
@@ -319,4 +328,28 @@ GHOST_SystemWayland::mode(
 		m_width = width;
 		m_height = height;
 	}
+}
+
+void
+GHOST_SystemWayland::capabilities(
+	struct wl_seat *seat,
+	uint32_t capabilities)
+{
+#define REGISTRY_INPUT(device, cap) \
+	do { \
+		const int has_##device = capabilities & cap; \
+		if (has_##device && !m_##device) { \
+			m_##device = WL_CHK(wl_seat_get_##device(seat)); \
+			ADD_LISTENER(device); \
+		} \
+		else if (!has_##device && m_##device) { \
+			wl::destroy(m_##device); \
+			m_##device = NULL; \
+		} \
+	} while (0)
+
+	REGISTRY_INPUT(keyboard, WL_SEAT_CAPABILITY_KEYBOARD);
+	REGISTRY_INPUT(pointer, WL_SEAT_CAPABILITY_POINTER);
+
+#undef REGISTRY_INPUT
 }
