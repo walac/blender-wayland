@@ -280,6 +280,9 @@ endif()
 option(WITH_EGL "Enable EGL windowing system" OFF)
 mark_as_advanced(WITH_EGL)
 
+option(WITH_XKBCOMMON "Enable xkbcommon library" OFF)
+mark_as_advanced(WITH_XKBCOMMON)
+
 if(UNIX AND NOT APPLE)
 	option(WITH_SYSTEM_GLEW "Use GLEW OpenGL wrapper library provided by the operating system" ON)
 	option(WITH_SYSTEM_GLES "Use OpenGL ES library provided by the operating system"           ON)
@@ -976,6 +979,7 @@ if(UNIX AND NOT APPLE)
 
 	if(WITH_GHOST_WAYLAND)
 		set(WITH_EGL ON)
+                set(WITH_XKBCOMMON ON)
 
 		find_package_wrapper(Wayland)
 
@@ -1012,6 +1016,16 @@ if(UNIX AND NOT APPLE)
 				message(FATAL_ERROR "EGL libraries not found.")
 			endif()
 		endif()
+	endif()
+
+	if(WITH_XKBCOMMON)
+		find_package_wrapper(XkbCommon)
+
+		if(NOT XKBCOMMON_FOUND)
+			message(FATAL_ERROR "xkbcommon library not found.")
+		endif()
+
+		mark_as_advanced(XKBCOMMON_LIBRARY XKBCOMMON_INCLUDE_DIR)
 	endif()
 
 	if(WITH_JACK)

@@ -60,6 +60,9 @@ if (UNIX AND NOT APPLE)
 	option(WITH_EGL "Enable EGL windowing system" OFF)
 	mark_as_advanced(WITH_EGL)
 
+	option(WITH_XKBCOMMON "Enable xkbcommon library" OFF)
+	mark_as_advanced(WITH_XKBCOMMON)
+
 	option(WITH_GHOST_WAYLAND "Enable building blender against Wayland for windowing" OFF)
 	mark_as_advanced(WITH_GHOST_WAYLAND)
 endif()
@@ -179,6 +182,7 @@ endif()
 if(UNIX AND NOT APPLE)
 	if(WITH_GHOST_WAYLAND)
 		set(WITH_EGL ON)
+		set(WITH_XKBCOMMON ON)
 
 		find_package(Wayland)
 
@@ -232,6 +236,21 @@ if(UNIX AND NOT APPLE)
 		endif()
 
 		set(PLATFORM_LINKLIBS ${PLATFORM_LINKLIBS} ${OPENGLES_EGL_LIBRARY})
+	endif()
+
+	if(WITH_XKBCOMMON)
+		find_package(XkbCommon)
+
+		if(NOT XKBCOMMON_FOUND)
+			message(FATAL_ERROR "xkbcommon library not found.")
+		endif()
+
+		mark_as_advanced(XKBCOMMON_LIBRARY XKBCOMMON_INCLUDE_DIR)
+
+		set(PLATFORM_LINKLIBS
+			${PLATFORM_LINKLIBS}
+			${XKBCOMMON_LIBRARY}
+		)
 	endif()
 
 	find_package(GLEW)
