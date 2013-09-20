@@ -27,6 +27,8 @@
 #include <cassert>
 #include <memory>
 #include <poll.h>
+#include <sys/mman.h>
+#include <unistd.h>
 
 #include "GHOST_SystemWayland.h"
 #include "GHOST_WindowWayland.h"
@@ -48,6 +50,9 @@ GHOST_SystemWayland::GHOST_SystemWayland()
 	, m_seat(NULL)
 	, m_keyboard(NULL)
 	, m_pointer(NULL)
+	, m_xkb_context(xkb_context_new(xkb_context_flags(0)))
+	, m_xkb_keymap(NULL)
+	, m_xkb_state(NULL)
 {
 	static const EGLint config_attribs[] = {
 		EGL_SURFACE_TYPE, EGL_WINDOW_BIT,
@@ -61,6 +66,8 @@ GHOST_SystemWayland::GHOST_SystemWayland()
 	};
 
 	EGLint major, minor;
+
+	assert(m_xkb_context);
 
 	m_registry = WL_CHK(wl_display_get_registry(m_display));
 
@@ -81,6 +88,15 @@ GHOST_SystemWayland::GHOST_SystemWayland()
 
 GHOST_SystemWayland::~GHOST_SystemWayland()
 {
+	if (m_xkb_state)
+		xkb_state_unref(m_xkb_state);
+
+	if (m_xkb_keymap)
+		xkb_map_unref(m_xkb_keymap);
+
+	if (m_xkb_context)
+		xkb_context_unref(m_xkb_context);
+
 	if (EGL_NO_DISPLAY != m_egl_display)
 		EGL_CHK(eglTerminate(m_egl_display));
 
@@ -353,3 +369,49 @@ GHOST_SystemWayland::capabilities(
 
 #undef REGISTRY_INPUT
 }
+
+void
+GHOST_SystemWayland::keymap(
+	struct wl_keyboard *keyboard,
+	uint32_t format,
+	int32_t fd,
+	uint32_t size)
+{
+	assert(keyboard == m_keyboard);
+	char *map_str = NULL;
+
+	if (format != WL_KEYBOARD_KEYMAP_FORMAT_XKB_V1)
+		goto end;
+
+	map_str = static_cast<char *> (mmap(NULL, size, PROT_READ, MAP_SHARED, fd, 0));
+	if (MAP_FAILED == map_str)
+		goto end;
+
+	m_xkb_keymap =
+		xkb_map_new_from_string(
+			m_xkb_context,
+			map_str,
+			XKB_KEYMAP_FORMAT_TEXT_V1,
+			XKB_MAP_COMPILE_PLACEHOLDER);
+
+	assert(m_xkb_keymap);
+
+	if (!m_xkb_keymap)
+		goto end;
+
+	m_xkb_state = xkb_state_new(m_xkb_keymap);
+
+	assert(m_xkb_state);
+
+	if (!m_xkb_state) {
+		xkb_map_unref(m_xkb_keymap);
+		m_xkb_keymap = NULL;
+	}
+
+end:
+	if (map_str)
+		munmap(map_str, size);
+
+	close(fd);
+}
+

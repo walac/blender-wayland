@@ -36,6 +36,7 @@
 #include "GHOST_Event.h"
 #include "wayland_util.h"
 #include "wayland_listeners.h"
+#include <xkbcommon/xkbcommon.h>
 
 extern "C" {
 #include <wayland-client.h>
@@ -132,6 +133,13 @@ private:
 	virtual void capabilities(
 		 struct wl_seat *seat,
 		 uint32_t capabilities);
+
+	virtual void keymap(
+		struct wl_keyboard *keyboard,
+		uint32_t format,
+		int32_t fd,
+		uint32_t size);
+
 private:
 
 	GHOST_TSuccess
@@ -168,6 +176,9 @@ private:
 	wl_seat *m_seat;
 	wl_keyboard *m_keyboard;
 	wl_pointer *m_pointer;
+	xkb_context *m_xkb_context;
+	xkb_keymap *m_xkb_keymap;
+	xkb_state *m_xkb_state;
 	EGLDisplay m_egl_display;
 	EGLConfig m_conf;
 	uint32_t m_width;
