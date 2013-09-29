@@ -197,7 +197,20 @@ GHOST_SystemWayland::getNumDisplays() const
 GHOST_TSuccess
 GHOST_SystemWayland::getModifierKeys(GHOST_ModifierKeys& keys) const
 {
-	(void) keys;
+	keys.set(GHOST_kModifierKeyRightControl, m_mod_state & m_mod_masks.rcontrol);
+	keys.set(GHOST_kModifierKeyLeftControl, m_mod_state & m_mod_masks.lcontrol);
+	keys.set(GHOST_kModifierKeyRightAlt, m_mod_state & m_mod_masks.ralt);
+	keys.set(GHOST_kModifierKeyLeftAlt, m_mod_state & m_mod_masks.lalt);
+
+	/*
+	 * libxkbcommon does not support left and right shift distinction yet
+	 *
+	 * ref: http://lists.freedesktop.org/archives/wayland-devel/2013-September/011239.html
+	 */
+	keys.set(GHOST_kModifierKeyLeftShift, m_mod_state & m_mod_masks.shift);
+	keys.set(GHOST_kModifierKeyRightShift, false);
+
+	keys.set(GHOST_kModifierKeyOS, m_mod_state & m_mod_masks.super);
 	return GHOST_kSuccess;
 }
 
@@ -379,7 +392,7 @@ GHOST_SystemWayland::keymap(
 {
 	assert(keyboard == m_keyboard);
 	char *map_str = NULL;
-
+	xkb_mod_index_t n;
 	if (format != WL_KEYBOARD_KEYMAP_FORMAT_XKB_V1)
 		goto end;
 
@@ -408,10 +421,76 @@ GHOST_SystemWayland::keymap(
 		m_xkb_keymap = NULL;
 	}
 
+	m_mod_masks.rcontrol = 1 << xkb_map_mod_get_index(m_xkb_keymap, "RControl");
+	m_mod_masks.lcontrol = 1 << xkb_map_mod_get_index(m_xkb_keymap, "LControl");
+	m_mod_masks.ralt = 1 << xkb_map_mod_get_index(m_xkb_keymap, "RAlt");
+	m_mod_masks.lalt = 1 << xkb_map_mod_get_index(m_xkb_keymap, "LAlt");
+	m_mod_masks.shift = 1 << xkb_map_mod_get_index(m_xkb_keymap, "Shift");
+	m_mod_masks.super = 1 << xkb_map_mod_get_index(m_xkb_keymap, "Super");
+
 end:
 	if (map_str)
 		munmap(map_str, size);
 
 	close(fd);
+}
+
+void
+GHOST_SystemWayland::enter(
+	struct wl_keyboard *keyboard,
+	uint32_t serial,
+	struct wl_surface *surface,
+	struct wl_array *keys)
+{
+	assert(m_keyboard == keyboard);
+}
+
+void
+GHOST_SystemWayland::leave(
+	struct wl_keyboard *keyboard,
+	uint32_t serial,
+	struct wl_surface *surface)
+{
+	assert(m_keyboard == keyboard);
+}
+
+void
+GHOST_SystemWayland::key(
+	struct wl_keyboard *keyboard,
+	uint32_t serial,
+	uint32_t time,
+	uint32_t key,
+	uint32_t state)
+{
+	assert(m_keyboard == keyboard);
+}
+
+void
+GHOST_SystemWayland::modifiers(
+	struct wl_keyboard *keyboard,
+	uint32_t serial,
+	uint32_t mods_depressed,
+	uint32_t mods_latched,
+	uint32_t mods_locked,
+	uint32_t group)
+{
+	assert(m_keyboard == keyboard);
+
+	if (!m_xkb_keymap)
+		return;
+
+	xkb_state_update_mask(
+		m_xkb_state,
+		mods_depressed,
+		mods_latched,
+		mods_locked,
+		0,
+		0,
+		group);
+
+	m_mod_state =
+		xkb_state_serialize_mods(
+			m_xkb_state,
+			xkb_state_component(XKB_STATE_DEPRESSED | XKB_STATE_LATCHED));
 }
 

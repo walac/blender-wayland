@@ -140,6 +140,31 @@ private:
 		int32_t fd,
 		uint32_t size);
 
+	virtual void enter(
+		struct wl_keyboard *keyboard,
+		uint32_t serial,
+		struct wl_surface *surface,
+		struct wl_array *keys);
+
+	virtual void leave(
+		struct wl_keyboard *keyboard,
+		uint32_t serial,
+		struct wl_surface *surface);
+
+	virtual void key(
+		struct wl_keyboard *keyboard,
+		uint32_t serial,
+		uint32_t time,
+		uint32_t key,
+		uint32_t state);
+
+	virtual void modifiers(
+		struct wl_keyboard *keyboard,
+		uint32_t serial,
+		uint32_t mods_depressed,
+		uint32_t mods_latched,
+		uint32_t mods_locked,
+		uint32_t group);
 private:
 
 	GHOST_TSuccess
@@ -168,6 +193,17 @@ private:
 		const wl_interface *interface);
 
 private:
+
+	struct xkb_mod_masks {
+		xkb_mod_mask_t rcontrol;
+		xkb_mod_mask_t lcontrol;
+		xkb_mod_mask_t lalt;
+		xkb_mod_mask_t ralt;
+		xkb_mod_mask_t shift;
+		xkb_mod_mask_t super;
+	};
+
+private:
 	wl_display *m_display;
 	wl_registry *m_registry;
 	wl_compositor *m_compositor;
@@ -183,6 +219,8 @@ private:
 	EGLConfig m_conf;
 	uint32_t m_width;
 	uint32_t m_height;
+	xkb_mod_masks m_mod_masks;
+	xkb_mod_mask_t m_mod_state;
 };
 
 template<typename T> bool
