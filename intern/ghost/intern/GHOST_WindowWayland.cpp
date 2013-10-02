@@ -77,6 +77,7 @@ GHOST_WindowWayland::GHOST_WindowWayland(GHOST_SystemWayland *system,
 	assert(shell);
 
 	m_surface = WL_CHK(wl_compositor_create_surface(compositor));
+	wl::set_user_data(m_surface, this);
 
 	m_shell_surface =
 		WL_CHK(wl_shell_get_shell_surface(shell, m_surface));

@@ -75,6 +75,14 @@ set_user_data(T *object, U *data)
 		static_cast<void *> (data));
 }
 
+template<typename T, typename U> inline T *
+get_user_data(U *object)
+{
+	return static_cast<T *>
+		(wl_proxy_get_user_data(
+			reinterpret_cast<wl_proxy *> (object)));
+}
+
 template<typename T> inline void
 destroy(T *object)
 {

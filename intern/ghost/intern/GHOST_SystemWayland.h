@@ -221,6 +221,7 @@ private:
 	uint32_t m_height;
 	xkb_mod_masks m_mod_masks;
 	xkb_mod_mask_t m_mod_state;
+	GHOST_WindowWayland *m_active_window;
 };
 
 template<typename T> bool

@@ -53,6 +53,7 @@ GHOST_SystemWayland::GHOST_SystemWayland()
 	, m_xkb_context(xkb_context_new(xkb_context_flags(0)))
 	, m_xkb_keymap(NULL)
 	, m_xkb_state(NULL)
+	, m_active_window(NULL)
 {
 	static const EGLint config_attribs[] = {
 		EGL_SURFACE_TYPE, EGL_WINDOW_BIT,
@@ -443,6 +444,7 @@ GHOST_SystemWayland::enter(
 	struct wl_array *keys)
 {
 	assert(m_keyboard == keyboard);
+        m_active_window = wl::get_user_data<GHOST_WindowWayland> (surface);
 }
 
 void
@@ -452,7 +454,115 @@ GHOST_SystemWayland::leave(
 	struct wl_surface *surface)
 {
 	assert(m_keyboard == keyboard);
+        m_active_window = NULL;
 }
+
+#define GXMAP(x, y) case x: return y; break
+
+static GHOST_TKey
+convertXKBKey(xkb_keysym_t key)
+{
+	if ((key >= XKB_KEY_A) && (key <= XKB_KEY_Z)) {
+		return GHOST_TKey(key - XKB_KEY_A + int(GHOST_kKeyA));
+	}
+	else if ((key >= XKB_KEY_a) && (key <= XKB_KEY_z)) {
+		return GHOST_TKey(key - XKB_KEY_a + int(GHOST_kKeyA));
+	}
+	else if ((key >= XKB_KEY_1) && (key <= XKB_KEY_0)) {
+		return (key == XKB_KEY_0) ? GHOST_kKey0 : GHOST_TKey(key - XKB_KEY_1 + int(GHOST_kKey1));
+	}
+	else if ((key >= XKB_KEY_F1) && (key <= XKB_KEY_F12)) {
+		return GHOST_TKey(key - XKB_KEY_F1 + int(GHOST_kKeyF1));
+	}
+	else if ((key >= XKB_KEY_F13) && (key <= XKB_KEY_F24)) {
+		return GHOST_TKey(key - XKB_KEY_F13 + int(GHOST_kKeyF13));
+	}
+	else {
+		switch (key) {
+			/* TODO XKB_KEY_NONUSBACKSLASH */
+
+			GXMAP(XKB_KEY_BackSpace,      GHOST_kKeyBackSpace);
+			GXMAP(XKB_KEY_Tab,            GHOST_kKeyTab);
+			GXMAP(XKB_KEY_Return,         GHOST_kKeyEnter);
+			GXMAP(XKB_KEY_Escape,         GHOST_kKeyEsc);
+			GXMAP(XKB_KEY_space,          GHOST_kKeySpace);
+
+			GXMAP(XKB_KEY_semicolon,      GHOST_kKeySemicolon);
+			GXMAP(XKB_KEY_period,         GHOST_kKeyPeriod);
+			GXMAP(XKB_KEY_comma,          GHOST_kKeyComma);
+			GXMAP(XKB_KEY_apostrophe,     GHOST_kKeyQuote);
+			GXMAP(XKB_KEY_grave,          GHOST_kKeyAccentGrave);
+			GXMAP(XKB_KEY_minus,          GHOST_kKeyMinus);
+			GXMAP(XKB_KEY_equal,          GHOST_kKeyEqual);
+
+			GXMAP(XKB_KEY_slash,          GHOST_kKeySlash);
+			GXMAP(XKB_KEY_backslash,      GHOST_kKeyBackslash);
+			GXMAP(XKB_KEY_KP_Equal,       GHOST_kKeyEqual);
+			GXMAP(XKB_KEY_bracketleft,    GHOST_kKeyLeftBracket);
+			GXMAP(XKB_KEY_bracketright,   GHOST_kKeyRightBracket);
+			GXMAP(XKB_KEY_Pause,          GHOST_kKeyPause);
+
+			GXMAP(XKB_KEY_Shift_L,        GHOST_kKeyLeftShift);
+			GXMAP(XKB_KEY_Shift_R,        GHOST_kKeyRightShift);
+			GXMAP(XKB_KEY_Control_L,      GHOST_kKeyLeftControl);
+			GXMAP(XKB_KEY_Control_R,      GHOST_kKeyRightControl);
+			GXMAP(XKB_KEY_Alt_L,          GHOST_kKeyLeftAlt);
+			GXMAP(XKB_KEY_Alt_R,          GHOST_kKeyRightAlt);
+			GXMAP(XKB_KEY_Super_L,        GHOST_kKeyOS);
+			GXMAP(XKB_KEY_Super_R,        GHOST_kKeyOS);
+
+			GXMAP(XKB_KEY_Insert,         GHOST_kKeyInsert);
+			GXMAP(XKB_KEY_Delete,         GHOST_kKeyDelete);
+			GXMAP(XKB_KEY_Home,           GHOST_kKeyHome);
+			GXMAP(XKB_KEY_End,            GHOST_kKeyEnd);
+			GXMAP(XKB_KEY_Page_Up,        GHOST_kKeyUpPage);
+			GXMAP(XKB_KEY_Page_Down,      GHOST_kKeyDownPage);
+
+			GXMAP(XKB_KEY_Left,           GHOST_kKeyLeftArrow);
+			GXMAP(XKB_KEY_Right,          GHOST_kKeyRightArrow);
+			GXMAP(XKB_KEY_Up,             GHOST_kKeyUpArrow);
+			GXMAP(XKB_KEY_Down,           GHOST_kKeyDownArrow);
+
+			GXMAP(XKB_KEY_Caps_Lock,      GHOST_kKeyCapsLock);
+			GXMAP(XKB_KEY_Scroll_Lock,    GHOST_kKeyScrollLock);
+			GXMAP(XKB_KEY_Num_Lock,       GHOST_kKeyNumLock);
+
+
+			/* keypad events */
+
+			GXMAP(XKB_KEY_KP_0,           GHOST_kKeyNumpad0);
+			GXMAP(XKB_KEY_KP_1,           GHOST_kKeyNumpad1);
+			GXMAP(XKB_KEY_KP_2,           GHOST_kKeyNumpad2);
+			GXMAP(XKB_KEY_KP_3,           GHOST_kKeyNumpad3);
+			GXMAP(XKB_KEY_KP_4,           GHOST_kKeyNumpad4);
+			GXMAP(XKB_KEY_KP_5,           GHOST_kKeyNumpad5);
+			GXMAP(XKB_KEY_KP_6,           GHOST_kKeyNumpad6);
+			GXMAP(XKB_KEY_KP_7,           GHOST_kKeyNumpad7);
+			GXMAP(XKB_KEY_KP_8,           GHOST_kKeyNumpad8);
+			GXMAP(XKB_KEY_KP_9,           GHOST_kKeyNumpad9);
+			GXMAP(XKB_KEY_KP_Decimal,     GHOST_kKeyNumpadPeriod);
+
+			GXMAP(XKB_KEY_KP_Enter,       GHOST_kKeyNumpadEnter);
+			GXMAP(XKB_KEY_KP_Add,         GHOST_kKeyNumpadPlus);
+			GXMAP(XKB_KEY_KP_Subtract,    GHOST_kKeyNumpadMinus);
+			GXMAP(XKB_KEY_KP_Multiply,    GHOST_kKeyNumpadAsterisk);
+			GXMAP(XKB_KEY_KP_Divide,      GHOST_kKeyNumpadSlash);
+
+			/* Media keys in some keyboards and laptops with XFree86/Xorg */
+			GXMAP(XKB_KEY_XF86AudioPlay,      GHOST_kKeyMediaPlay);
+			GXMAP(XKB_KEY_XF86AudioStop,      GHOST_kKeyMediaStop);
+			GXMAP(XKB_KEY_XF86AudioPrev,      GHOST_kKeyMediaFirst);
+			GXMAP(XKB_KEY_XF86AudioRewind,    GHOST_kKeyMediaFirst);
+			GXMAP(XKB_KEY_XF86AudioNext,      GHOST_kKeyMediaLast);
+
+			default:
+			fprintf(stderr, "Unknown\n");
+			return GHOST_kKeyUnknown;
+		}
+	}
+}
+
+#undef GXMAP
 
 void
 GHOST_SystemWayland::key(
@@ -463,6 +573,36 @@ GHOST_SystemWayland::key(
 	uint32_t state)
 {
 	assert(m_keyboard == keyboard);
+	xkb_keysym_t sym;
+	GHOST_TKey ghost_key;
+	char utf8[8];
+	wl_keyboard_key_state key_state =
+		static_cast<wl_keyboard_key_state> (state);
+
+	if (!m_xkb_state)
+		return;
+
+	sym = xkb_state_key_get_one_sym(m_xkb_state, key + 8);
+	ghost_key = convertXKBKey(sym);
+
+	int size = xkb_keysym_to_utf8(sym, utf8, sizeof(utf8)/sizeof(utf8[0]));
+
+	if (size < 0) {
+		fprintf(stderr, "xkb_keysym_to_utf8 failed\n");
+		return;
+	} else if (!size) {
+		utf8[0] = '\0';
+	}
+
+	pushEvent(new GHOST_EventKey(
+				getMilliSeconds(),
+				WL_KEYBOARD_KEY_STATE_PRESSED == key_state
+				? GHOST_kEventKeyDown
+				: GHOST_kEventKeyUp,
+				m_active_window,
+				ghost_key,
+				'\0',
+				utf8));
 }
 
 void
@@ -491,6 +631,8 @@ GHOST_SystemWayland::modifiers(
 	m_mod_state =
 		xkb_state_serialize_mods(
 			m_xkb_state,
-			xkb_state_component(XKB_STATE_DEPRESSED | XKB_STATE_LATCHED));
+			xkb_state_component(
+				XKB_STATE_DEPRESSED
+				| XKB_STATE_LATCHED));
 }
 
