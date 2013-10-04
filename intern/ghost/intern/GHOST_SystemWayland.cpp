@@ -444,7 +444,11 @@ GHOST_SystemWayland::enter(
 	struct wl_array *keys)
 {
 	assert(m_keyboard == keyboard);
-        m_active_window = wl::get_user_data<GHOST_WindowWayland> (surface);
+	m_active_window = wl::get_user_data<GHOST_WindowWayland> (surface);
+	pushEvent(new GHOST_Event(
+		getMilliSeconds(),
+		GHOST_kEventWindowActivate,
+		m_active_window));
 }
 
 void
@@ -454,7 +458,11 @@ GHOST_SystemWayland::leave(
 	struct wl_surface *surface)
 {
 	assert(m_keyboard == keyboard);
-        m_active_window = NULL;
+	pushEvent(new GHOST_Event(
+		getMilliSeconds(),
+		GHOST_kEventWindowDeactivate,
+		m_active_window));
+	m_active_window = NULL;
 }
 
 #define GXMAP(x, y) case x: return y; break
