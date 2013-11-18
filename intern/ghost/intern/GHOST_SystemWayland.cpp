@@ -393,7 +393,7 @@ GHOST_SystemWayland::keymap(
 {
 	assert(keyboard == m_keyboard);
 	char *map_str = NULL;
-	xkb_mod_index_t n;
+
 	if (format != WL_KEYBOARD_KEYMAP_FORMAT_XKB_V1)
 		goto end;
 
