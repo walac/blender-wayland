@@ -476,7 +476,7 @@ convertXKBKey(xkb_keysym_t key)
 	else if ((key >= XKB_KEY_a) && (key <= XKB_KEY_z)) {
 		return GHOST_TKey(key - XKB_KEY_a + int(GHOST_kKeyA));
 	}
-	else if ((key >= XKB_KEY_1) && (key <= XKB_KEY_0)) {
+	else if ((key >= XKB_KEY_0) && (key <= XKB_KEY_9)) {
 		return (key == XKB_KEY_0) ? GHOST_kKey0 : GHOST_TKey(key - XKB_KEY_1 + int(GHOST_kKey1));
 	}
 	else if ((key >= XKB_KEY_F1) && (key <= XKB_KEY_F12)) {
