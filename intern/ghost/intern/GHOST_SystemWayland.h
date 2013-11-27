@@ -45,8 +45,19 @@ extern "C" {
 
 #include <cstring>
 
-#define ADD_LISTENER(object) \
-	wl::add_listener<wl::object##_listener>(this, m_##object)
+/*
+ * Configure the listener for a member object whose name
+ * matches the pattern m_<type-name>
+ */
+#define ADD_LISTENER(type) \
+	ADD_LISTENER2(type, m_##type)
+
+/*
+ * This a more flexible and verbose version of ADD_LISTENER.
+ * This macro allows you to specify the name of the object.
+ */
+#define ADD_LISTENER2(type, object) \
+	wl::add_listener<wl::type##_listener>(this, object)
 
 class GHOST_WindowWayland;
 
