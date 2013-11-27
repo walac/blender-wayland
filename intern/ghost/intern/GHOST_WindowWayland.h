@@ -50,15 +50,16 @@ public:
 	WindowCallbackBase(GHOST_WindowWayland *window);
 	virtual ~WindowCallbackBase();
 
-	void initialize()
-	{ init(); }
+	void setup();
 
 protected:
 	GHOST_WindowWayland *m_window;
-	wl_callback *m_callback;
 
 private:
-	virtual void init() {}
+	/*
+	 * This member function configures the callback object.
+	 */
+	virtual wl_callback *configure_callback() {}
 };
 
 class GHOST_WindowWayland
@@ -175,7 +176,7 @@ private:
 
 	private:
 		void done(struct wl_callback *callback, uint32_t serial);
-		void init();
+		wl_callback *configure_callback();
 	};
 
 	class DisplaySyncHandler : public WindowCallbackBase {
@@ -186,7 +187,7 @@ private:
 
 	private:
 		void done(struct wl_callback *callback, uint32_t serial);
-		void init();
+		wl_callback *configure_callback();
 	};
 
 private:

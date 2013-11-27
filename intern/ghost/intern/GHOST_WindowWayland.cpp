@@ -30,13 +30,11 @@
 
 WindowCallbackBase::WindowCallbackBase(GHOST_WindowWayland *window)
 	: m_window(window)
-	, m_callback(NULL)
 {
 }
 
 WindowCallbackBase::~WindowCallbackBase()
 {
-	wl::destroy(m_callback);
 }
 
 GHOST_WindowWayland::GHOST_WindowWayland(GHOST_SystemWayland *system,
@@ -103,7 +101,7 @@ GHOST_WindowWayland::GHOST_WindowWayland(GHOST_SystemWayland *system,
 
 	wl_shell_surface_set_toplevel(m_shell_surface);
 	resize();
-	m_sync.initialize();
+	m_sync.setup();
 }
 
 GHOST_WindowWayland::~GHOST_WindowWayland()
@@ -400,13 +398,19 @@ GHOST_WindowWayland::configure(
 	m_height = height;
 }
 
+void
+WindowCallbackBase::setup()
+{
+	wl_callback *callback = configure_callback();
+	ADD_LISTENER2(callback, callback);
+}
+
 // redraw
 void
 GHOST_WindowWayland::WindowDrawHandler::done(
 	struct wl_callback *callback,
 	uint32_t)
 {
-	assert(callback == m_callback);
 	GHOST_SystemWayland *system = m_window->m_system;
 
 	system->pushEvent(
@@ -415,15 +419,14 @@ GHOST_WindowWayland::WindowDrawHandler::done(
 	            GHOST_kEventWindowUpdate,
 	            m_window));
 
-	wl::destroy(m_callback);
-	initialize();
+	wl::destroy(callback);
+	setup();
 }
 
-void
-GHOST_WindowWayland::WindowDrawHandler::init()
+wl_callback *
+GHOST_WindowWayland::WindowDrawHandler::configure_callback()
 {
-	m_callback = WL_CHK(wl_surface_frame(m_window->m_surface));
-	ADD_LISTENER(callback);
+	return WL_CHK(wl_surface_frame(m_window->m_surface));
 }
 
 void
@@ -431,7 +434,6 @@ GHOST_WindowWayland::DisplaySyncHandler::done(
         struct wl_callback *callback,
         uint32_t)
 {
-	assert(callback == m_callback);
 	GHOST_SystemWayland *system = m_window->m_system;
 
 	system->pushEvent(
@@ -440,15 +442,13 @@ GHOST_WindowWayland::DisplaySyncHandler::done(
 	            GHOST_kEventWindowUpdate,
 	            m_window));
 
-	wl::destroy(m_callback);
-	m_callback = NULL;
-	m_window->m_redraw.initialize();
+	wl::destroy(callback);
+	m_window->m_redraw.setup();
 }
 
-void
-GHOST_WindowWayland::DisplaySyncHandler::init()
+wl_callback *
+GHOST_WindowWayland::DisplaySyncHandler::configure_callback()
 {
-	m_callback = WL_CHK(wl_display_sync(m_window->m_system->getDisplay()));
-	ADD_LISTENER(callback);
+	return WL_CHK(wl_display_sync(m_window->m_system->getDisplay()));
 }
 
