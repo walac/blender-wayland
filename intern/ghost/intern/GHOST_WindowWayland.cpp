@@ -61,7 +61,7 @@ GHOST_WindowWayland::GHOST_WindowWayland(GHOST_SystemWayland *system,
 	, m_y(top)
 	, m_width(width)
 	, m_height(height)
-	, m_state(GHOST_kWindowStateNormal)
+	, m_state(GHOST_kWindowStateUnModified)
 	, m_redraw(this)
 	, m_sync(this)
 {
@@ -99,9 +99,7 @@ GHOST_WindowWayland::GHOST_WindowWayland(GHOST_SystemWayland *system,
 		GHOST_PRINT("Created window\n");
 	}
 
-	wl_shell_surface_set_toplevel(m_shell_surface);
-	resize();
-	m_sync.setup();
+	setState(state);
 }
 
 GHOST_WindowWayland::~GHOST_WindowWayland()
@@ -208,16 +206,20 @@ GHOST_WindowWayland::setState(GHOST_TWindowState state)
 
 		switch (state) {
 			case GHOST_kWindowStateNormal:
+				endFullScreen();
 				break;
 			case GHOST_kWindowStateMaximized:
-				break;
-			case GHOST_kWindowStateMinimized:
+				wl_shell_surface_set_maximized(m_shell_surface, NULL);
 				break;
 			case GHOST_kWindowStateFullScreen:
+				beginFullScreen();
 				break;
+			case GHOST_kWindowStateMinimized:
 			default:
-				break;
+				return GHOST_kFailure;
 		}
+
+		m_sync.setup();
 	}
 
 	return GHOST_kSuccess;
@@ -228,6 +230,25 @@ GHOST_TWindowState
 GHOST_WindowWayland::getState() const
 {
 	return m_state;
+}
+
+GHOST_TSuccess
+GHOST_WindowWayland::beginFullScreen() const
+{
+	wl_shell_surface_set_fullscreen(
+		m_shell_surface,
+		WL_SHELL_SURFACE_FULLSCREEN_METHOD_DEFAULT,
+		0,
+		NULL);
+
+	return GHOST_kSuccess;
+}
+
+GHOST_TSuccess
+GHOST_WindowWayland::endFullScreen() const
+{
+	wl_shell_surface_set_toplevel(m_shell_surface);
+	resize();
 }
 
 
@@ -368,7 +389,7 @@ GHOST_WindowWayland::context_make_current(EGLSurface surf)
 }
 
 void
-GHOST_WindowWayland::resize(void)
+GHOST_WindowWayland::resize(void) const
 {
 	wl_egl_window_resize(
 	        m_window,

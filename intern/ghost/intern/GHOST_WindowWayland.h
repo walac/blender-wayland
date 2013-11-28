@@ -162,9 +162,9 @@ protected:
 		return GHOST_kSuccess;
 	}
 
-	GHOST_TSuccess beginFullScreen() const { return GHOST_kFailure; }
+	GHOST_TSuccess beginFullScreen() const;
 
-	GHOST_TSuccess endFullScreen() const { return GHOST_kFailure; }
+	GHOST_TSuccess endFullScreen() const;
 
 private:
 
@@ -194,7 +194,7 @@ private:
 
 	void context_make_current(EGLSurface surf);
 
-	void resize(void);
+	void resize(void) const;
 
 	virtual void ping(
 		struct wl_shell_surface *shell_surface,
