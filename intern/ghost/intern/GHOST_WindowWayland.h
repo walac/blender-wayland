@@ -40,6 +40,7 @@ extern "C" {
 }
 
 #include <string>
+#include <list>
 
 class STR_String;
 class GHOST_SystemWayland;
@@ -59,7 +60,17 @@ private:
 	/*
 	 * This member function configures the callback object.
 	 */
-	virtual wl_callback *configure_callback() {}
+	virtual wl_callback *configure_callback() = 0;
+
+	/*
+	 * This function is called when the wl_back 'done' event arrives.
+	 */
+	virtual void on_done(struct wl_callback *callback, uint32_t serial) = 0;
+
+	void done(struct wl_callback *callback, uint32_t serial);
+
+private:
+	std::list<wl_callback *> m_cb_list;
 };
 
 class GHOST_WindowWayland
@@ -175,7 +186,7 @@ private:
 		{ }
 
 	private:
-		void done(struct wl_callback *callback, uint32_t serial);
+		void on_done(struct wl_callback *callback, uint32_t serial);
 		wl_callback *configure_callback();
 	};
 
@@ -186,7 +197,7 @@ private:
 		{ }
 
 	private:
-		void done(struct wl_callback *callback, uint32_t serial);
+		void on_done(struct wl_callback *callback, uint32_t serial);
 		wl_callback *configure_callback();
 	};
 

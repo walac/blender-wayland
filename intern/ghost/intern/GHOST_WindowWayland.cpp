@@ -27,6 +27,7 @@
 #include "GHOST_WindowWayland.h"
 #include <GL/glew.h>
 #include <cassert>
+#include <algorithm>
 
 WindowCallbackBase::WindowCallbackBase(GHOST_WindowWayland *window)
 	: m_window(window)
@@ -35,6 +36,23 @@ WindowCallbackBase::WindowCallbackBase(GHOST_WindowWayland *window)
 
 WindowCallbackBase::~WindowCallbackBase()
 {
+	std::for_each(m_cb_list.begin(), m_cb_list.end(), wl::destroy<wl_callback>);
+}
+
+void
+WindowCallbackBase::setup()
+{
+	wl_callback *callback = configure_callback();
+	ADD_LISTENER2(callback, callback);
+	m_cb_list.push_back(callback);
+}
+
+void
+WindowCallbackBase::done(struct wl_callback *callback, uint32_t serial)
+{
+	on_done(callback, serial);
+	m_cb_list.remove(callback);
+	wl::destroy(callback);
 }
 
 GHOST_WindowWayland::GHOST_WindowWayland(GHOST_SystemWayland *system,
@@ -419,16 +437,9 @@ GHOST_WindowWayland::configure(
 	m_height = height;
 }
 
-void
-WindowCallbackBase::setup()
-{
-	wl_callback *callback = configure_callback();
-	ADD_LISTENER2(callback, callback);
-}
-
 // redraw
 void
-GHOST_WindowWayland::WindowDrawHandler::done(
+GHOST_WindowWayland::WindowDrawHandler::on_done(
 	struct wl_callback *callback,
 	uint32_t)
 {
@@ -440,7 +451,6 @@ GHOST_WindowWayland::WindowDrawHandler::done(
 	            GHOST_kEventWindowUpdate,
 	            m_window));
 
-	wl::destroy(callback);
 	setup();
 }
 
@@ -451,7 +461,7 @@ GHOST_WindowWayland::WindowDrawHandler::configure_callback()
 }
 
 void
-GHOST_WindowWayland::DisplaySyncHandler::done(
+GHOST_WindowWayland::DisplaySyncHandler::on_done(
         struct wl_callback *callback,
         uint32_t)
 {
@@ -463,7 +473,6 @@ GHOST_WindowWayland::DisplaySyncHandler::done(
 	            GHOST_kEventWindowUpdate,
 	            m_window));
 
-	wl::destroy(callback);
 	m_window->m_redraw.setup();
 }
 
