@@ -186,10 +186,19 @@ GHOST_TSuccess GHOST_System::endFullScreen(void)
 {
 	GHOST_TSuccess success = GHOST_kFailure;
 	GHOST_ASSERT(m_windowManager, "GHOST_System::endFullScreen(): invalid window manager");
-	if (m_windowManager->getFullScreen()) {
-		//GHOST_IWindow* window = m_windowManager->getFullScreenWindow();
+	GHOST_IWindow *window = m_windowManager->getFullScreenWindow();
+
+	if (window) {
 		//GHOST_PRINT("GHOST_System::endFullScreen(): leaving window manager full-screen mode\n");
 		success = m_windowManager->endFullScreen();
+
+		/*
+		 * GHOST_Window::endFullScreen might put new events in the
+		 * queue. Because of that, we remove the events after we
+		 * destroy the fullscreen window.
+		 */
+		m_eventManager->removeWindowEvents(window);
+
 		GHOST_ASSERT(m_displayManager, "GHOST_System::endFullScreen(): invalid display manager");
 		//GHOST_PRINT("GHOST_System::endFullScreen(): leaving full-screen mode\n");
 		success = m_displayManager->setCurrentDisplaySetting(GHOST_DisplayManager::kMainDisplay, m_preFullScreenSetting);
