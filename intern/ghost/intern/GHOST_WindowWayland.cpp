@@ -224,7 +224,8 @@ GHOST_WindowWayland::setState(GHOST_TWindowState state)
 
 		switch (state) {
 			case GHOST_kWindowStateNormal:
-				endFullScreen();
+				wl_shell_surface_set_toplevel(m_shell_surface);
+				resize();
 				break;
 			case GHOST_kWindowStateMaximized:
 				wl_shell_surface_set_maximized(m_shell_surface, NULL);
@@ -253,6 +254,9 @@ GHOST_WindowWayland::getState() const
 GHOST_TSuccess
 GHOST_WindowWayland::beginFullScreen() const
 {
+	m_nfs_width = m_width;
+	m_nfs_height = m_height;
+
 	wl_shell_surface_set_fullscreen(
 		m_shell_surface,
 		WL_SHELL_SURFACE_FULLSCREEN_METHOD_DEFAULT,
@@ -266,7 +270,15 @@ GHOST_TSuccess
 GHOST_WindowWayland::endFullScreen() const
 {
 	wl_shell_surface_set_toplevel(m_shell_surface);
-	resize();
+
+	wl_egl_window_resize(
+	        m_window,
+	        m_nfs_width,
+	        m_nfs_height,
+	        m_x,
+	        m_y);
+
+	m_sync.setup();
 }
 
 

@@ -231,12 +231,20 @@ private:
 	std::string m_title;
 	int m_x;
 	int m_y;
+
 	int m_width;
 	int m_height;
 
+	/*
+	 * When we go fullscreen, we have to backup the window size
+	 * to restore it when we come back to the normal mode.
+	 */
+	mutable int m_nfs_width;
+	mutable int m_nfs_height;
+
 	GHOST_TWindowState m_state;
 	WindowDrawHandler m_redraw;
-	DisplaySyncHandler m_sync;
+	mutable DisplaySyncHandler m_sync;
 };
 
 #endif // __GHOST_WINDOWWAYLAND_H__
