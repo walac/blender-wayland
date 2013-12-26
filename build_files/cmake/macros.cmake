@@ -383,6 +383,7 @@ function(setup_liblinks
 			${target}
 			${WAYLAND_CLIENT_LIBRARIES}
 			${WAYLAND_EGL_LIBRARIES}
+			${WAYLAND_CURSOR_LIBRARIES}
 			${OPENGLES_EGL_LIBRARY}
 		)
 	endif()

@@ -30,6 +30,8 @@
 #include <sys/mman.h>
 #include <unistd.h>
 
+#include <linux/input.h>
+
 #include "GHOST_SystemWayland.h"
 #include "GHOST_WindowWayland.h"
 
@@ -48,8 +50,12 @@ GHOST_SystemWayland::GHOST_SystemWayland()
 	, m_shell(NULL)
 	, m_output(NULL)
 	, m_seat(NULL)
+	, m_shm(NULL)
 	, m_keyboard(NULL)
 	, m_pointer(NULL)
+	, m_cursor_theme(NULL)
+	, m_default_cursor(NULL)
+	, m_cursor_surface(NULL)
 	, m_xkb_context(xkb_context_new(xkb_context_flags(0)))
 	, m_xkb_keymap(NULL)
 	, m_xkb_state(NULL)
@@ -105,9 +111,12 @@ GHOST_SystemWayland::~GHOST_SystemWayland()
 	wl::destroy(m_pointer);
 	wl::destroy(m_output);
 	wl::destroy(m_shell);
-	wl::destroy(m_compositor);
 	wl::destroy(m_seat);
+	wl::destroy(m_shm);
 	wl::destroy(m_registry);
+	wl::destroy(m_cursor_surface);
+	wl_cursor_theme_destroy(m_cursor_theme);
+	wl::destroy(m_compositor);
 
 	WL_CHK(wl_display_flush(m_display));
 	wl::destroy(m_display);
@@ -331,7 +340,10 @@ GHOST_SystemWayland::global(
 		id, \
 		&wl_##object##_interface)
 
-	REGISTRY_BIND(compositor);
+	if (REGISTRY_BIND(compositor))
+		m_cursor_surface =
+			WL_CHK(wl_compositor_create_surface(m_compositor));
+
 	REGISTRY_BIND(shell);
 
 	if (REGISTRY_BIND(output))
@@ -339,6 +351,15 @@ GHOST_SystemWayland::global(
 
 	if (REGISTRY_BIND(seat))
 		ADD_LISTENER(seat);
+
+	if (REGISTRY_BIND(shm)) {
+		m_cursor_theme =
+			WL_CHK(wl_cursor_theme_load(
+				NULL, 32, m_shm));
+		m_default_cursor =
+			WL_CHK(wl_cursor_theme_get_cursor(
+				m_cursor_theme, "left_ptr"));
+	}
 
 #undef REGISTRY_BIND
 }
@@ -464,7 +485,6 @@ GHOST_SystemWayland::leave(
 		m_active_window));
 	m_active_window = NULL;
 }
-
 #define GXMAP(x, y) case x: return y; break
 
 static GHOST_TKey
@@ -642,5 +662,114 @@ GHOST_SystemWayland::modifiers(
 			xkb_state_component(
 				XKB_STATE_DEPRESSED
 				| XKB_STATE_LATCHED));
+}
+
+
+void
+GHOST_SystemWayland::enter(
+	struct wl_pointer *pointer,
+	uint32_t serial,
+	struct wl_surface *surface,
+	wl_fixed_t surface_x,
+	wl_fixed_t surface_y)
+{
+	assert(m_pointer == pointer);
+
+	wl_cursor *cursor = m_default_cursor;
+	wl_cursor_image *image = cursor->images[0];
+	wl_buffer *buffer = WL_CHK(wl_cursor_image_get_buffer(image));
+
+	wl_pointer_set_cursor(
+		pointer,
+		serial,
+		m_cursor_surface,
+		image->hotspot_x,
+		image->hotspot_y);
+
+	wl_surface_attach(m_cursor_surface, buffer, 0, 0);
+	wl_surface_damage(m_cursor_surface, 0, 0, image->width, image->height);
+	wl_surface_commit(m_cursor_surface);
+}
+
+void
+GHOST_SystemWayland::leave(
+	struct wl_pointer *pointer,
+	uint32_t serial,
+	struct wl_surface *surface)
+{
+	assert(m_pointer == pointer);
+	wl_pointer_set_cursor(pointer, serial, NULL, 0, 0);
+}
+
+void
+GHOST_SystemWayland::motion(
+	struct wl_pointer *pointer,
+	uint32_t time,
+	wl_fixed_t surface_x,
+	wl_fixed_t surface_y)
+{
+	assert(m_pointer == pointer);
+	GHOST_Rect bounds;
+
+	m_active_window->getWindowBounds(bounds);
+
+	pushEvent(new GHOST_EventCursor(
+		getMilliSeconds(),
+		GHOST_kEventCursorMove,
+		m_active_window,
+		wl_fixed_to_int(surface_x) + bounds.m_l,
+		wl_fixed_to_int(surface_y) + bounds.m_t
+	));
+}
+
+void
+GHOST_SystemWayland::axis(
+	struct wl_pointer *pointer,
+	uint32_t time,
+	uint32_t axis,
+	wl_fixed_t value)
+{
+	assert(m_pointer == pointer);
+
+	if (WL_POINTER_AXIS_VERTICAL_SCROLL == axis)
+		pushEvent(new GHOST_EventWheel(
+			getMilliSeconds(),
+			m_active_window,
+			wl_fixed_to_int(value)));
+}
+
+void
+GHOST_SystemWayland::button(
+	struct wl_pointer *pointer,
+	uint32_t serial,
+	uint32_t time,
+	uint32_t button,
+	uint32_t state)
+{
+	GHOST_TEventType st;
+	GHOST_TButtonMask btn_mask;
+
+#define ASSIGN_STATE(wl_state, ghost_state) \
+	case wl_state: st = ghost_state; break
+
+#define ASSIGN_BUTTON(wl_button, ghost_button) \
+	case wl_button: btn_mask = ghost_button; break
+
+	switch (state) {
+		ASSIGN_STATE(WL_POINTER_BUTTON_STATE_PRESSED, GHOST_kEventButtonDown);
+		ASSIGN_STATE(WL_POINTER_BUTTON_STATE_RELEASED, GHOST_kEventButtonUp);
+	}
+
+	switch (button) {
+		ASSIGN_BUTTON(BTN_LEFT, GHOST_kButtonMaskLeft);
+		ASSIGN_BUTTON(BTN_RIGHT, GHOST_kButtonMaskRight);
+		ASSIGN_BUTTON(BTN_MIDDLE, GHOST_kButtonMaskMiddle);
+	}
+
+	pushEvent(new GHOST_EventButton(
+		getMilliSeconds(), st, m_active_window, btn_mask));
+
+#undef ASSIGN_STATE
+#undef ASSIGN_BUTTON
 }
 

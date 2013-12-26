@@ -40,6 +40,7 @@
 
 extern "C" {
 #include <wayland-client.h>
+#include <wayland-cursor.h>
 #include <EGL/egl.h>
 }
 
@@ -176,6 +177,38 @@ private:
 		uint32_t mods_latched,
 		uint32_t mods_locked,
 		uint32_t group);
+
+	virtual void enter(
+		struct wl_pointer *pointer,
+		uint32_t serial,
+		struct wl_surface *surface,
+		wl_fixed_t surface_x,
+		wl_fixed_t surface_y);
+
+	virtual void leave(
+		struct wl_pointer *pointer,
+		uint32_t serial,
+		struct wl_surface *surface);
+
+	virtual void motion(
+		struct wl_pointer *pointer,
+		uint32_t time,
+		wl_fixed_t surface_x,
+		wl_fixed_t surface_y);
+
+	virtual void axis(
+		struct wl_pointer *pointer,
+		uint32_t time,
+		uint32_t axis,
+		wl_fixed_t value);
+
+	virtual void button(
+		struct wl_pointer *pointer,
+		uint32_t serial,
+		uint32_t time,
+		uint32_t button,
+		uint32_t state);
+
 private:
 
 	GHOST_TSuccess
@@ -221,8 +254,12 @@ private:
 	wl_shell *m_shell;
 	wl_output *m_output;
 	wl_seat *m_seat;
+	wl_shm *m_shm;
 	wl_keyboard *m_keyboard;
 	wl_pointer *m_pointer;
+	wl_cursor_theme *m_cursor_theme;
+	wl_cursor *m_default_cursor;
+	wl_surface *m_cursor_surface;
 	xkb_context *m_xkb_context;
 	xkb_keymap *m_xkb_keymap;
 	xkb_state *m_xkb_state;
